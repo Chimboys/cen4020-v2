@@ -29,7 +29,7 @@ def signup(db):
         login(db)
         return
 
-    email = input("Enter your email: ")
+    username = input("Enter your username: ")
     school = input("Enter your school: ")
     hashed_password = input("Enter your password: ")
     
@@ -43,13 +43,13 @@ def signup(db):
             if continue_signup.lower() == 'yes':
                 login(db)
             return
-        if db.query(models.User).filter(models.User.email == email).first():
-            print("Email already in use.")
-            continue_signup = input("Would you like to login instead? (yes/no)") #change email
+        if db.query(models.User).filter(models.User.username == username).first():
+            print("Username already in use.")
+            continue_signup = input("Would you like to login instead? (yes/no)") #change
             if continue_signup.lower() == 'yes':
                 login(db)
             return
-        user_create = UserCreate(email=email, hashed_password=hashed_password, school=school)
+        user_create = UserCreate(username=username, hashed_password=hashed_password, school=school)
         new_user = models.User(**user_create.dict())
         db.add(new_user)
         db.commit()
@@ -68,7 +68,7 @@ def signup(db):
 
 def login(db):
     # Get user input
-    email = input("Enter your email: ")
+    username = input("Enter your username: ")
     password = input("Enter your password: ")
     if not check_password(password):
         continue_signup = input("Password is invalid. Do you want to continue login? (yes/no): ")
@@ -79,7 +79,7 @@ def login(db):
         return
 
     
-    queryUser = db.query(models.User).filter(models.User.email == email).first()
+    queryUser = db.query(models.User).filter(models.User.username == username).first()
     if queryUser is None:
         print("Sigh Up first")
         return
