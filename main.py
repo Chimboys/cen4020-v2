@@ -132,6 +132,33 @@ def login(db):
     main_hub(user, db)
 
 
+def post_a_job(userData: UserInfo, db):
+    while True:
+        try:
+            title = input("Enter the title of the job: ")
+            content = input("Enter the content of the job: ")
+            post = models.Post(title=title, content=content,
+                               user_id=userData.id)
+            db.add(post)
+            db.commit()
+            print("Job posted", "\n")
+            print("do you want to post another job? (yes/no)")
+            choice = input("Enter your choice: ")
+            if choice.lower() == 'no':
+                main_hub(userData, db)
+                return
+
+        except SQLAlchemyError:
+            print("Error posting job")
+            choice = input(
+                "Would you like to go back to the main hub? (yes/no): ")
+
+            if choice.lower() == 'yes':
+                main_hub(userData, db)
+            else:
+                print("Re-enter details", "\n")
+
+
 def main_hub(userData: UserInfo, db):
 
     print("Search for a job: (s) ")
@@ -139,7 +166,7 @@ def main_hub(userData: UserInfo, db):
     print("Learn new skills: (l)")
     print("View all friends: (vf)")
     print("Logout: (lo)")
-    print(": (e)")
+    print("Job search and Internships: (p)")
     print("Exit: (e)")
     choice = input("Enter your choice: ")
     choice = choice.lower()
@@ -154,6 +181,8 @@ def main_hub(userData: UserInfo, db):
         view_all_friends(userData, db)
     elif choice == 'lo':
         login(db)
+    elif choice == 'p':
+        post_a_job(userData, db)
     elif choice == 'e':
         print("Goodbye")
         return
