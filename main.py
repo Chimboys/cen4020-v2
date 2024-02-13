@@ -31,8 +31,32 @@ def find_user_by_first_last_name(first_name: str, last_name: str, db: Session):
         print("Person is a part of the InCollege system")
         signup(db)
     else:
-        print("They are not a part of the InCollege system")
+        print("They are not a part of the InCollege system") 
         print("Goodbye")
+
+
+
+
+
+
+
+def find_user_by_first_last_name_login(first_name: str, last_name: str, userData:UserInfo, db: Session):
+    if db.query(models.User).filter(and_(models.User.first_name == first_name, models.User.last_name == last_name)).first():
+        print("Person is a part of the InCollege system")
+        signup(db)
+    else:
+        print("They are not a part of the InCollege system")
+        new_prospective_connection = models.ProspectiveConnection(caller_id=userData.id, first_name=first_name, last_name=last_name)
+        db.add(new_prospective_connection)
+        db.commit()
+        main_hub(userData, db)
+        print("Goodbye")
+
+
+
+
+
+
 
 
 def signup(db):
@@ -92,6 +116,17 @@ def signup(db):
         db.refresh(new_user)
         user = UserInfo(id=new_user.id, username=new_user.username, school=new_user.school,
                         first_name=new_user.first_name, last_name=new_user.last_name)
+        
+        remainder = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.first_name == first_name, models.ProspectiveConnection.last_name == last_name).first()
+        if remainder:
+            caller = db.query(models.User).filter(models.User.id == remainder.caller_id).first()
+            print(f"Hi, {caller.first_name} {caller.last_name} was looking for you")
+            friend = Friends(user_id=caller.id, friend_id=new_user.id)
+            friendship = models.Friendship(**friend.dict())
+            db.add(friendship)
+            db.delete(remainder)
+            db.commit()
+        
         main_hub(user, db)
 
     else:
@@ -163,6 +198,7 @@ def main_hub(userData: UserInfo, db):
 
     print("Search for a job: (s) ")
     print("Find new friends: (nf)")
+    print("Search a person by first and last name: (sp)")
     print("Learn new skills: (l)")
     print("View all friends: (vf)")
     print("Logout: (lo)")
@@ -183,6 +219,11 @@ def main_hub(userData: UserInfo, db):
         login(db)
     elif choice == 'p':
         post_a_job(userData, db)
+    elif choice == 'sp':
+        first_name = input("Enter the first name of the user: ")
+        last_name = input("Enter the last name of the user: ")
+        find_user_by_first_last_name_login(first_name, last_name, userData, db)
+
     elif choice == 'e':
         print("Goodbye")
         return
