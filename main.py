@@ -1,10 +1,11 @@
 import re  
 import hashlib
-from user import UserCreate
+from user import UserCreate, UserInfo, Friends
 import models
 from sqlalchemy.orm import Session
 from database import get_db
 from sqlalchemy.sql import func
+from sqlalchemy import or_
 
 def check_password(password):
     # Check if password meets the requirements
@@ -22,13 +23,38 @@ def check_password(password):
         return False
     return True
 
+
+
+
+
+
+def find_user_by_email(email:str , db: Session):
+    if db.query(models.User).filter(models.User.username == email).first():
+        print("They are a part of the InCollege system")
+        signup(db)
+    else:
+        print("They are not a part of the InCollege system")
+        print("Goodbye")
+ 
+
+
+
+
 def signup(db):
     # Get user input
     has_account = input("Do you already have an account? (yes/no): ")
     if has_account.lower() == 'yes':
         login(db)
         return
-
+    choice = str(input("Would you like to sign up? (yes/no): "))
+    if choice.lower() == 'no':
+        choiceFind = str(input("Would you like to find a user by email? (yes/no): "))
+        if choiceFind.lower() == 'yes':
+            email = input("Enter the email of the user: ")
+            find_user_by_email(email, db)
+        else:
+            print("Goodbye")
+            return
     username = input("Enter your username: ")
     school = input("Enter your school: ")
     hashed_password = input("Enter your password: ")
@@ -54,8 +80,9 @@ def signup(db):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        print("User created successfully")
-        print("Account created successfully!")
+        user = UserInfo(id = new_user.id, username=new_user.username, school = new_user.school)
+        main_hub(user, db)
+        
 
     else:
 
@@ -87,7 +114,116 @@ def login(db):
         print("Password is incorrect")
         return
     print("Login successfulyes")
-    print(queryUser.id)
+    user = UserInfo(id = queryUser.id, username=queryUser.username, school = queryUser.school)
+    main_hub(user, db)
+
+
+
+def main_hub(userData: UserInfo, db):
+     
+    print(userData.id)
+    print(userData.username)
+    print(userData.school)
+    print("Search for a job: (s) ")
+    print("Find new friends: (nf)")
+    print("Learn new skills: (l)")
+    print("View all friends: (vf)")
+    print("Logout: (lo)")
+    print("Exit: (e)")
+    choice = input("Enter your choice: ")
+    choice = choice.lower()
+    if choice == 's':
+        # search_job(userData, db)
+        pass
+    elif choice == 'nf':
+        find_new_friends(userData, db)
+    elif choice == 'l':
+        learn_new_skills(userData, db)
+        pass
+    elif choice == 'vf':
+        #view_all_friends(userData, db)
+        pass
+    elif choice == 'lo':
+        login(db)
+    elif choice == 'e':
+        print("Goodbye")
+        return
+    else:
+        print("Invalid choice")
+        main_hub(userData, db)
+
+def view_all_friends(userData: UserInfo, db):
+    friends = db.query(models.Friendship).filter( or_(models.Friendship.user_id == userData.id, 
+                                                    models.Friendship.friend_id == userData.id)).all()
+    for friend in friends:
+        print(friend.friend_id)
+    choice = input("Would you like to go back to the main hub? (yes/no): ")
+    if choice.lower() == 'yes':
+        main_hub(userData, db)
+    else:
+        print("Goodbye")
+        return
+
+
+
+def find_new_friends(userData: UserInfo, db):
+    users = db.query(models.User).all()
+    idList = []
+    for user in users:
+        if user.id == userData.id:
+            continue
+        else:
+            print(f"Username: {user.username}, School: {user.school}, ID: {user.id}")
+            idList.append(user.id)
+    add_friends(userData, db, idList)
+    
+
+def add_friends(userData: UserInfo,  db, idList: list):
+    try:
+        choice = int(input("if you want to add a friend, enter the id of the user, else enter no ")) #Add try and Catch Block
+        if choice not in idList:
+            print("Invalid id")
+        elif choice == userData.id:
+            print("You cannot add yourself as a friend")
+        elif ( db.query(models.Friendship).filter(models.Friendship.user_id == userData.id, models.Friendship.friend_id == choice).first() 
+            or 
+            db.query(models.Friendship).filter(models.Friendship.user_id == choice, models.Friendship.friend_id == userData.id).first()):
+            print("Friend already added")
+
+        else:
+            friends = Friends(user_id = userData.id, friend_id = choice)
+            friendship = models.Friendship(**friends.dict())
+            db.add(friendship)
+            db.commit()
+            print("Friend added")
+        
+        choiceAgain = input("Do you still want to add more friends? (yes/no): ")
+        if choiceAgain.lower() == 'no':
+            main_hub(userData, db)
+        else:
+            add_friends(userData, db, idList)
+            
+    except ValueError:
+        main_hub(userData, db)
+    
+     
+
+def learn_new_skills(userData: UserInfo, db):
+    print("Learn new skills")
+    print("1. Python")
+    print("2. Java")
+    print("3. C++")
+    print("4. C#")
+    print("5. JavaScript")
+    input("Enter your choice: ")
+    print("Under contruction")
+    choice = input("Would you like to go back to the main hub? (yes/no): ")
+    if choice.lower() == 'yes':
+        main_hub(userData, db)
+    else:
+        print("Goodbye")
+        return
+   
 
 
 

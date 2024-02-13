@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, MetaData
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, MetaData, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
@@ -16,5 +16,22 @@ class User(Base): #creating a class User
     hashed_password = Column(String) #creating a column hashed_password
     school = Column(String) #creating a column school
     created_at = Column(TIMESTAMP, server_default=text('now()')) #creating a column created_at
+
+
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    friend_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    declared_at = Column(TIMESTAMP, server_default=text('now()')) #creating a column created_at
+
+    # Define relationships
+    user = relationship("User", foreign_keys=[user_id])
+    friend = relationship("User", foreign_keys=[friend_id])
+    # Define a composite primary key constraint
+    __table_args__ = (
+        PrimaryKeyConstraint('user_id', 'friend_id'),
+    )
 
 Base.metadata.create_all(engine) #creating the table
