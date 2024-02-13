@@ -1,10 +1,10 @@
 # CEN4020 InCollege Website
 
 Member:
-1. Umar Khan
-2. Akmal Kurbanov
-3. Quy An Le
-4. Mukund Sharma
+1. Akmal Kurbanov
+2. Mukund Sharma
+3. Umar Khan
+4. Quy An Le
 5. Carlos Otero Pena
 
 ## Installation
