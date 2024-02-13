@@ -12,18 +12,19 @@ metadata = MetaData()
 class User(Base): #creating a class User
     __tablename__ = "users" #name of the table
     id = Column(Integer, primary_key=True, index=True) #creating a column id
-    username = Column(String, unique=True, index=True) #creating a column email
-    hashed_password = Column(String) #creating a column hashed_password
-    school = Column(String) #creating a column school
+    username = Column(String, unique=True, nullable=False, index=True) #creating a column email
+    hashed_password = Column(String, nullable=False) #creating a column hashed_password
+    school = Column(String, nullable=False) #creating a column school
     created_at = Column(TIMESTAMP, server_default=text('now()')) #creating a column created_at
+    first_name = Column(String, unique=True, nullable=False) #creating a column first_name
+    last_name = Column(String, unique=True, nullable=False) #creating a column last_name
 
 
 
 class Friendship(Base):
     __tablename__ = "friendships"
-
-    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    friend_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id',  ondelete='CASCADE'), primary_key=True)
+    friend_id = Column(Integer, ForeignKey('users.id',  ondelete='CASCADE'), primary_key=True)
     declared_at = Column(TIMESTAMP, server_default=text('now()')) #creating a column created_at
 
     # Define relationships
