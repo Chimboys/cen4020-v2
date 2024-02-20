@@ -34,10 +34,174 @@ def find_user_by_first_last_name(first_name: str, last_name: str, db: Session):
         print("They are not a part of the InCollege system") 
         print("Goodbye")
 
+def handle_useful_links_choice(userData, db, choice):
+    if choice == 1:
+        handle_general_links(userData)
+    elif choice in (2, 3, 4):
+        print("Under construction for Browse InCollege, Business Solutions, Directories")
+    else:
+        print("Invalid choice")
+
+def handle_general_links(userData):
+    print("General Links:")
+    print("1. Sign Up")
+    print("2. Help Center")
+    print("3. About")
+    print("4. Press")
+    print("5. Blog")
+    print("6. Careers")
+    print("7. Developers")
+    print("0. Main Hub")
+
+    sub_choice = input("Enter your choice: ")
+
+    if sub_choice == '1':
+        signup(db)
+    elif sub_choice == '2':
+        print("We're here to help")
+    elif sub_choice == '3':
+        print("In College: Welcome to In College, the world's largest college student network with many users in many countries and territories worldwide")
+    elif sub_choice == '4':
+        print("In College Pressroom: Stay on top of the latest news, updates, and reports")
+    elif sub_choice in ('5', '6', '7'):
+        print("Under construction")
+    elif sub_choice == '0':
+        main_hub(userData, db)
+    else:
+        print("Invalid choice")
 
 
+def handle_guest_controls(userData, db):
+    print("Guest Controls:")
+    val = db.query(models.GuestControl).filter(models.GuestControl.user_id == userData.id).first()
+    print("Select the guest control you would like to see:")
+    print("1. InCollege Email", val.incollege_email_enabled)
+    print("2. SMS", val.sms_enabled)
+    print("3. Targeted Advertising", val.targeted_advertising_enabled)
+    print("0. Exit")
 
+    while True:
+        print("Which one would you like to change?")
+        choice = input("Enter your choice: ")
+        if choice == '1':
+            val.incollege_email_enabled = not val.incollege_email_enabled
+            db.commit()
+        elif choice == '2':
+            val.sms_enabled = not val.sms_enabled
+            db.commit()
+        elif choice == '3':
+            val.targeted_advertising_enabled = not val.targeted_advertising_enabled
+            db.commit()
+        elif choice == '0':
+            main_hub(userData, db)
+        else:
+            print("Invalid choice")
 
+    
+
+def handle_important_links_choice(userData, db, choice):
+    # Implement logic for handling each important link based on the choice
+    if choice == 5:
+        if userData:
+            print("1. Guest Controls")
+            print("0. Exit")
+            sub_choice = input("Enter your choice: ")
+            if sub_choice == '1':
+                handle_guest_controls(userData, db)
+            elif sub_choice == '0':
+                main_hub(userData, db)
+            else:
+                print("Invalid choice")
+        else:
+            print("Log in to access Guest Controls")
+    elif choice == 1:
+        print("Copyright (c) [Year] [Full Name]","All rights reserved.","This software, InCollege, is the property of Team Beige. Any redistribution, modification, or reproduction is not permitted without the express consent of team Beige.",end="\n")
+
+    elif choice ==2:
+        print("InCollege is a dedicated platform designed to empower college students in their job search by providing a space exclusively for them and potential employers. Join InCollege today and take a step towards shaping your professional future.")
+        
+    elif choice == 3:
+        print("Empowering inclusive education: Our inCollege app is designed with accessibility in mind, ensuring a seamless and enriching experience for users of all abilities.")
+    
+    elif choice == 4:
+        print("""
+User Agreement
+
+This User Agreement ("Agreement") is a contract between you and InCollege and applies to your use of InCollege services.
+
+1. Acceptance of Terms
+
+By using InCollege, you agree to this Agreement and any other rules or policies that we may publish from time to time.
+
+2. Eligibility and Content
+
+You must be at least 18 years old to use [App Name]. You are responsible for all content posted and activity that occurs under your account.
+
+InCollege
+USF Computer Science Department
+""")
+
+    elif choice == 6:
+        print("InCollege app uses essential, analytics, and functionality cookies to enhance your experience, remembering preferences and analyzing usage patterns; by using the app, you consent to the use of cookies as outlined in our Cookie Policy.")
+
+    elif choice == 7:
+        print("""
+        Copyright (c) 2024 InCollege
+
+        All rights reserved.
+
+        This software, [App Name], is the property of InCollege. Any redistribution, modification, or reproduction is not permitted without the express consent of InCollege.
+        """)
+
+    elif choice == 8:
+        print("InCollege app is committed to fostering inclusive education, providing a seamless and enriching experience for users of all abilities, promoting diversity, and ensuring a safe and supportive learning environment.")
+    
+    elif choice == 9:
+        print("1. Language Preference")
+        print("0. Exit")
+        sub_choice = input("Enter your choice: ")
+        if sub_choice == '1':
+            if userData:
+                handle_language_preference(userData, db)
+            else:
+                print("Log in to access Language Preference")
+        elif sub_choice == '0':
+            main_hub(userData, db)
+        else:
+            print("Invalid choice")
+
+    else:
+        print("Invalid choice")
+
+def handle_language_preference(userData, db):
+    print("Language Controls:")
+    val = db.query(models.GuestControl).filter(models.GuestControl.user_id == userData.id).first()
+    print("Select an option:")
+    print("1. Language preference", val.language_preference)
+    print("0. Exit")
+
+    while True:
+        print("Would you like to change your preference?")
+        choice = input("Enter your choice: ")
+        if choice == 'Yes':
+            print("Choose which language you would like to use")
+            print("1. English")
+            print("2. Spanish")
+            sub_choice = input("Enter your choice: ")
+            if sub_choice == '1':
+                val.language_preference = "English"
+                db.commit()
+            elif sub_choice == '2':
+                val.language_preference = "Spanish"
+                db.commit()
+            else:
+                print("Invalid choice")
+        elif choice == 'No':
+            main_hub(userData, db)
+        else:
+            print("Invalid choice")
+
+    
 
 
 def find_user_by_first_last_name_login(first_name: str, last_name: str, userData:UserInfo, db: Session):
@@ -51,12 +215,6 @@ def find_user_by_first_last_name_login(first_name: str, last_name: str, userData
         db.commit()
         main_hub(userData, db)
         print("Goodbye")
-
-
-
-
-
-
 
 
 def signup(db):
@@ -116,7 +274,18 @@ def signup(db):
         db.refresh(new_user)
         user = UserInfo(id=new_user.id, username=new_user.username, school=new_user.school,
                         first_name=new_user.first_name, last_name=new_user.last_name)
-        
+        default_guest_control = models.GuestControl(
+            incollege_email_enabled=True,
+            sms_enabled=True,
+            targeted_advertising_enabled=True,
+            user_id=new_user.id
+        )
+        db.add(default_guest_control)
+        db.commit()
+
+        new_user.guest_control = default_guest_control
+        db.commit()
+
         remainder = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.first_name == first_name, models.ProspectiveConnection.last_name == last_name).first()
         if remainder:
             caller = db.query(models.User).filter(models.User.id == remainder.caller_id).first()
@@ -166,6 +335,10 @@ def login(db):
                     first_name=queryUser.first_name, last_name=queryUser.last_name)
     main_hub(user, db)
 
+def logout(userData, db):
+    print("Logout successful")
+    return None, None  # Returning None for userData and db
+
 
 def post_a_job(userData: UserInfo, db):
     while True:
@@ -194,42 +367,109 @@ def post_a_job(userData: UserInfo, db):
                 print("Re-enter details", "\n")
 
 
-def main_hub(userData: UserInfo, db):
+def main_hub(userData: UserInfo=None, db=None):
 
-    print("Search for a job: (s) ")
-    print("Find new friends: (nf)")
-    print("Search a person by first and last name: (sp)")
-    print("Learn new skills: (l)")
-    print("View all friends: (vf)")
-    print("Logout: (lo)")
-    print("Job search and Internships: (p)")
-    print("Exit: (e)")
-    choice = input("Enter your choice: ")
-    choice = choice.lower()
-    if choice == 's':
-        # search_job(userData, db)
-        pass
-    elif choice == 'nf':
-        find_new_friends(userData, db)
-    elif choice == 'l':
-        learn_new_skills(userData, db)
-    elif choice == 'vf':
-        view_all_friends(userData, db)
-    elif choice == 'lo':
-        login(db)
-    elif choice == 'p':
-        post_a_job(userData, db)
-    elif choice == 'sp':
-        first_name = input("Enter the first name of the user: ")
-        last_name = input("Enter the last name of the user: ")
-        find_user_by_first_last_name_login(first_name, last_name, userData, db)
+    while True:
+        print("Welcome to InCollege!")
 
-    elif choice == 'e':
-        print("Goodbye")
-        return
-    else:
-        print("Invalid choice")
-        main_hub(userData, db)
+        # Provide initial choice for the user
+        print("Select Links to Explore:")
+        print("1. Useful Links")
+        print("2. Important Links")
+        print("3. User Actions")
+        print("4. Exit")
+        initial_choice = input("Enter your choice: ").lower()
+
+        if initial_choice == '4':
+            print("Goodbye")
+            break
+        elif initial_choice == '1':
+            explore_links(userData, db, "Useful Links")
+        elif initial_choice == '2':
+            explore_links(userData, db, "Important Links")
+        elif initial_choice == '3':
+            userData, db = user_actions(userData, db)
+        else:
+            print("Invalid choice")
+
+
+def explore_links(userData, db, link_type):
+    while True:
+        if userData:
+            print(f"Welcome, {userData.first_name}!")
+        else:
+            print("Welcome! (You are not logged in)")
+
+        print(f"{link_type}:")
+        if link_type == "Useful Links":
+            print("1. General")
+            print("2. Browse InCollege")
+            print("3. Business Solutions")
+            print("4. Directories")
+        elif link_type == "Important Links":
+            print("1. Copyright Notice")
+            print("2. About")
+            print("3. Accessibility")
+            print("4. User Agreement")
+            print("5. Privacy Policy")
+            print("6. Cookie Policy")
+            print("7. Copyright Policy")
+            print("8. Brand Policy")
+            print("9. Languages")
+        else:
+            print("Invalid link type")
+
+        print("0. Go back to main hub")
+        choice = input("Enter your choice: ")
+
+        if choice == '0':
+            break
+        elif link_type == "Useful Links" and choice in ('1', '2', '3', '4'):
+            handle_useful_links_choice(userData, db, int(choice))
+        elif link_type == "Important Links" and choice in ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10'):
+            handle_important_links_choice(userData, db, int(choice))
+        else:
+            print("Invalid choice")
+
+def user_actions(userData, db):
+    while True:
+        if userData:
+            print(f"Welcome, {userData.first_name}!")
+            print("User Actions:")
+            print("1. Search for a job")
+            print("2. Find new friends")
+            print("3. Learn new skills")
+            print("4. View all friends")
+            print("5. Logout")
+            print("6. Job search and Internships")
+            print("7. Exit")
+            user_choice = input("Enter your choice: ").lower()
+
+            if user_choice == '1':
+                # search_job(userData, db)
+                pass
+            elif user_choice == '2':
+                find_new_friends(userData, db)
+            elif user_choice == '3':
+                learn_new_skills(userData, db)
+            elif user_choice == '4':
+                view_all_friends(userData, db)
+            elif user_choice == '5':
+                userData, db = logout(userData, db)
+                if userData is None and db is None:
+                    break
+            elif user_choice == '6':
+                post_a_job(userData, db)
+            elif user_choice == '7':
+                print("Goodbye")
+                break
+            else:
+                print("Invalid choice")
+        else:
+            print("You need to log in to perform user actions.")
+            signup(db)
+    
+    return userData, db
 
 
 # Fix it so it does not comeback to the main hub once user does not have friends
@@ -330,6 +570,6 @@ def learn_new_skills(userData: UserInfo, db):
 
 db = next(get_db())
 try:
-    signup(db)
+    main_hub(db=db)
 finally:
     db.close()

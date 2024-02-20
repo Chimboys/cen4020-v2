@@ -9,6 +9,18 @@ from database import engine
 metadata = MetaData()
 # creating a base class
 
+class GuestControl(Base):
+    __tablename__ = "guest_controls"
+    id = Column(Integer, primary_key=True, index=True)
+    incollege_email_enabled = Column(Boolean, default=True, nullable=False)
+    sms_enabled = Column(Boolean, default=True, nullable=False)
+    targeted_advertising_enabled = Column(Boolean, default=True, nullable=False)
+    language_preference = Column(String, server_default="English", nullable=False)
+
+    # Establish one-to-one relationship with User
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    user = relationship("User", back_populates="guest_control")
+
 
 class User(Base):  # creating a class User
     __tablename__ = "users"  # name of the table
@@ -24,6 +36,8 @@ class User(Base):  # creating a class User
     first_name = Column(String, unique=True, nullable=False)
     # creating a column last_name
     last_name = Column(String, unique=True, nullable=False)
+
+    guest_control = relationship("GuestControl", uselist=False, back_populates="user")
 
 
 class Post(Base):
