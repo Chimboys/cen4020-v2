@@ -287,15 +287,15 @@ def signup(db):
         new_user.guest_control = default_guest_control
         db.commit()
 
-        remainder = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.first_name == first_name, models.ProspectiveConnection.last_name == last_name).first()
-        if remainder:
-            caller = db.query(models.User).filter(models.User.id == remainder.caller_id).first()
-            print(f"Hi, {caller.first_name} {caller.last_name} was looking for you")
-            friend = Friends(user_id=caller.id, friend_id=new_user.id)
-            friendship = models.Friendship(**friend.dict())
-            db.add(friendship)
-            db.delete(remainder)
-            db.commit()
+        # remainder = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.first_name == first_name, models.ProspectiveConnection.last_name == last_name).first()
+        # if remainder:
+        #     caller = db.query(models.User).filter(models.User.id == remainder.caller_id).first()
+        #     print(f"Hi, {caller.first_name} {caller.last_name} was looking for you")
+        #     friend = Friends(user_id=caller.id, friend_id=new_user.id)
+        #     friendship = models.Friendship(**friend.dict())
+        #     db.add(friendship)
+        #     db.delete(remainder)
+        #     db.commit()
         
         main_hub(user, db)
 
@@ -560,13 +560,13 @@ def handle_friend_requests(userData: UserInfo, db):
         choice = input("Enter your choice: ")
 
         if choice == '1':
-            accept_friend_requests(userData, db)
+            accept_or_reject_friend_requests(userData, db)
         elif choice == '2':
             break
         else:
             print("Invalid choice")
         
-def accept_friend_requests(userData: UserInfo, db):
+def accept_or_reject_friend_requests(userData: UserInfo, db):
     pending_requests = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.receiver_id == userData.id).all()
 
     if not pending_requests:
@@ -578,22 +578,31 @@ def accept_friend_requests(userData: UserInfo, db):
         caller = db.query(models.User).filter(models.User.id == request.caller_id).first()
         print(f"User ID: {caller.id}, First Name: {caller.first_name}, Last Name: {caller.last_name}, School: {caller.school}")
 
-    user_id_to_accept = input("Enter the User ID you want to accept as a friend (or enter '0' to cancel): ")
+    user_id_to_accept_or_reject = input("Enter the User ID you want to accept or reject as a friend (or enter '0' to cancel): ")
 
-    if user_id_to_accept == '0':
+    if user_id_to_accept_or_reject == '0':
         return
 
     try:
-        user_id_to_accept = int(user_id_to_accept)
+        user_id_to_accept_or_reject = int(user_id_to_accept_or_reject)
         prospective_connection = db.query(models.ProspectiveConnection).filter(
-            and_(models.ProspectiveConnection.caller_id == user_id_to_accept, models.ProspectiveConnection.receiver_id == userData.id)).first()
+            and_(models.ProspectiveConnection.caller_id == user_id_to_accept_or_reject, models.ProspectiveConnection.receiver_id == userData.id)).first()
         if prospective_connection:
-            friend = Friends(user_id=user_id_to_accept, friend_id=userData.id)
-            friendship = models.Friendship(**friend.dict())
-            db.add(friendship)
-            db.delete(prospective_connection)
-            db.commit()
-            print("Friend request accepted successfully.")
+            print("1. Accept friend request")
+            print("2. Reject friend request")
+            choice = input("Do you want to accept or reject: ")
+
+            if choice == 1:
+                friend = Friends(user_id=user_id_to_accept_or_reject, friend_id=userData.id)
+                friendship = models.Friendship(**friend.dict())
+                db.add(friendship)
+                db.delete(prospective_connection)
+                db.commit()
+                print("Friend request accepted successfully.")
+            else:
+                db.delete(prospective_connection)
+                db.commit()
+                print("Friend request rejected successfully")
         else:
             print("Invalid User ID. No pending friend request found for the specified user.")
     except ValueError:
