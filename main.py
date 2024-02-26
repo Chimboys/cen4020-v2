@@ -457,6 +457,10 @@ def user_actions(userData, db):
                 learn_new_skills(userData, db)
             elif user_choice == '4':
                 view_all_friends(userData, db)
+                disconnect_choice = input("Do you want to disconnect from a friend? (yes/no): ")
+                if disconnect_choice.lower() == 'yes':
+                    friend_id_to_disconnect = int(input("Enter the User ID of the friend you want to disconnect from: "))
+                    disconnect_from_friend(userData.id, friend_id_to_disconnect, db)
             elif user_choice == '5':
                 handle_friend_requests(userData, db)
             elif user_choice == '6':
@@ -509,6 +513,20 @@ def view_all_friends(userData: UserInfo, db):
     else:
         print("Goodbye")
         return
+
+def disconnect_from_friend(user_id: int, friend_id: int, db: Session):
+    friendship = db.query(models.Friendship).filter(
+        ((models.Friendship.user_id == user_id) & (models.Friendship.friend_id == friend_id)) |
+        ((models.Friendship.user_id == friend_id) & (models.Friendship.friend_id == user_id))
+    ).first()
+
+    if friendship:
+        db.delete(friendship)
+        db.commit()
+        print("Successfully disconnected from the friend.")
+    else:
+        print("Friendship not found.")
+
 
 
 def find_new_friends_and_send_request(userData: UserInfo, db):
