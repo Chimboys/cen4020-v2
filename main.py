@@ -252,7 +252,7 @@ def signup(db):
         school = input("Enter your school: ")
         first_name = input("Enter your first name: ")
         last_name = input("Enter your last name: ")
-        if db.query(func.count(models.User.id)).scalar() > 5:
+        if db.query(func.count(models.User.id)).scalar() > 10:
             print("You have reached the maximum number of users.")
             continue_signup = input(
                 "Would you like to login instead? (yes/no)")
