@@ -207,6 +207,7 @@ def handle_language_preference(userData, db):
 def find_user_by_first_last_name_login(first_name: str, last_name: str, userData:UserInfo, db: Session):
     if db.query(models.User).filter(and_(models.User.first_name == first_name, models.User.last_name == last_name)).first():
         print("Person is a part of the InCollege system")
+        
         signup(db)
     else:
         print("They are not a part of the InCollege system")
@@ -236,7 +237,7 @@ def signup(db):
             input("Would you like to find a user by first and last name? (yes/no): "))
         if choiceFind.lower() == 'yes':
             first_name = input("Enter the first name of the user: ")
-            last_name = input("Enter the last name of the user: ", "\n")
+            last_name = input("Enter the last name of the user: ")
             find_user_by_first_last_name(first_name, last_name, db)
             return
         else:
@@ -333,6 +334,7 @@ def login(db):
     print("Login successfuly")
     user = UserInfo(id=queryUser.id, username=queryUser.username, school=queryUser.school,
                     first_name=queryUser.first_name, last_name=queryUser.last_name)
+
     main_hub(user, db)
 
 def logout(userData, db):
@@ -440,27 +442,30 @@ def user_actions(userData, db):
             print("2. Find new friends")
             print("3. Learn new skills")
             print("4. View all friends")
-            print("5. Logout")
-            print("6. Job search and Internships")
-            print("7. Exit")
+            print("5. Handle Friend Requests")
+            print("6. Logout")
+            print("7. Job search and Internships")
+            print("8. Exit")
             user_choice = input("Enter your choice: ").lower()
 
             if user_choice == '1':
                 # search_job(userData, db)
                 pass
             elif user_choice == '2':
-                find_new_friends(userData, db)
+                find_new_friends_and_send_request(userData, db)
             elif user_choice == '3':
                 learn_new_skills(userData, db)
             elif user_choice == '4':
                 view_all_friends(userData, db)
             elif user_choice == '5':
+                handle_friend_requests(userData, db)
+            elif user_choice == '6':
                 userData, db = logout(userData, db)
                 if userData is None and db is None:
                     break
-            elif user_choice == '6':
-                post_a_job(userData, db)
             elif user_choice == '7':
+                post_a_job(userData, db)
+            elif user_choice == '8':
                 print("Goodbye")
                 break
             else:
@@ -497,7 +502,7 @@ def view_all_friends(userData: UserInfo, db):
                 models.User.id == (index.friend_id)).first()
 
         print(
-            f'Fisrt name: {friend.first_name}, last name: {friend.last_name}, school: {friend.school}, id: {friend.id}')
+            f'First name: {friend.first_name}, last name: {friend.last_name}, school: {friend.school}, id: {friend.id}')
     choice = input("Would you like to go back to the main hub? (yes/no): ")
     if choice.lower() == 'yes':
         main_hub(userData, db)
@@ -506,49 +511,94 @@ def view_all_friends(userData: UserInfo, db):
         return
 
 
-def find_new_friends(userData: UserInfo, db):
-    users = db.query(models.User).all()
-    idList = []
-    for user in users:
-        if user.id == userData.id:
-            continue
-        else:
-            print(
-                f"Username: {user.username}, First name: {user.first_name}, Last Name: {user.last_name}, School: {user.school}, ID: {user.id}")
-            idList.append(user.id)
-    add_friends(userData, db, idList)
-
-
-def add_friends(userData: UserInfo,  db, idList: list):
-    try:
-        # Add try and Catch Block
-        choice = int(
-            input("if you want to add a friend, enter the id of the user, else enter no "))
-        if choice not in idList:
-            print("Invalid id")
-        elif choice == userData.id:
-            print("You cannot add yourself as a friend")
-        elif (db.query(models.Friendship).filter(models.Friendship.user_id == userData.id, models.Friendship.friend_id == choice).first()
-              or
-              db.query(models.Friendship).filter(models.Friendship.user_id == choice, models.Friendship.friend_id == userData.id).first()):
-            print("Friend already added")
-
-        else:
-            friends = Friends(user_id=userData.id, friend_id=choice)
-            friendship = models.Friendship(**friends.dict())
-            db.add(friendship)
-            db.commit()
-            print("Friend added")
-
-        choiceAgain = input(
-            "Do you still want to add more friends? (yes/no): ")
-        if choiceAgain.lower() == 'no':
-            main_hub(userData, db)
-        else:
-            add_friends(userData, db, idList)
-
-    except ValueError:
+def find_new_friends_and_send_request(userData: UserInfo, db):
+    last_name_to_search = input("Enter the last name to search: ")
+    matching_users = db.query(models.User).filter(
+        models.User.last_name == last_name_to_search).all()
+    
+    if not matching_users:
+        print(f"No users found with the last name '{last_name_to_search}'.")
         main_hub(userData, db)
+        return
+    
+    print("Matching Users:")
+    for user in matching_users:
+        print(f"User ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}, School: {user.school}")
+
+    user_id_to_add = input("Enter the User ID you want to send a friend request to (or enter '0' to go back to the main hub): ")
+
+    if user_id_to_add == '0':
+        main_hub(userData, db)
+        return
+
+    try:
+        user_id_to_add = int(user_id_to_add)
+        if user_id_to_add == userData.id:
+            print("You cannot send a friend request to yourself.")
+        elif db.query(models.Friendship).filter(or_(
+                and_(models.Friendship.user_id == userData.id, models.Friendship.friend_id == user_id_to_add),
+                and_(models.Friendship.user_id == user_id_to_add, models.Friendship.friend_id == userData.id))).first():
+            print("Friendship already exists.")
+        else:
+            send_friend_request(userData.id, user_id_to_add, db)
+    except ValueError:
+        print("Invalid User ID. Please enter a valid numeric User ID.")
+    
+    main_hub(userData, db)
+
+def send_friend_request(caller_id, receiver_id, db):
+    new_prospective_connection = models.ProspectiveConnection(caller_id=caller_id, receiver_id=receiver_id)
+    db.add(new_prospective_connection)
+    db.commit()
+    print("Friend request sent successfully.")
+
+def handle_friend_requests(userData: UserInfo, db):
+    while True:
+        print("Friend Request Handling:")
+        print("1. View and Accept Friend Requests")
+        print("2. Go back to user actions")
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            accept_friend_requests(userData, db)
+        elif choice == '2':
+            break
+        else:
+            print("Invalid choice")
+        
+def accept_friend_requests(userData: UserInfo, db):
+    pending_requests = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.receiver_id == userData.id).all()
+
+    if not pending_requests:
+        print("No pending friend requests.")
+        return
+
+    print("Pending Friend Requests:")
+    for request in pending_requests:
+        caller = db.query(models.User).filter(models.User.id == request.caller_id).first()
+        print(f"User ID: {caller.id}, First Name: {caller.first_name}, Last Name: {caller.last_name}, School: {caller.school}")
+
+    user_id_to_accept = input("Enter the User ID you want to accept as a friend (or enter '0' to cancel): ")
+
+    if user_id_to_accept == '0':
+        return
+
+    try:
+        user_id_to_accept = int(user_id_to_accept)
+        prospective_connection = db.query(models.ProspectiveConnection).filter(
+            and_(models.ProspectiveConnection.caller_id == user_id_to_accept, models.ProspectiveConnection.receiver_id == userData.id)).first()
+        if prospective_connection:
+            friend = Friends(user_id=user_id_to_accept, friend_id=userData.id)
+            friendship = models.Friendship(**friend.dict())
+            db.add(friendship)
+            db.delete(prospective_connection)
+            db.commit()
+            print("Friend request accepted successfully.")
+        else:
+            print("Invalid User ID. No pending friend request found for the specified user.")
+    except ValueError:
+        print("Invalid User ID. Please enter a valid numeric User ID.")
+
 
 
 def learn_new_skills(userData: UserInfo, db):
