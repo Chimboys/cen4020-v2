@@ -445,7 +445,8 @@ def user_actions(userData, db):
             print("5. Handle Friend Requests")
             print("6. Logout")
             print("7. Job search and Internships")
-            print("8. Exit")
+            print("8. Create/Update User Profile")            
+            print("0. Exit")
             user_choice = input("Enter your choice: ").lower()
 
             if user_choice == '1':
@@ -470,6 +471,8 @@ def user_actions(userData, db):
             elif user_choice == '7':
                 post_a_job(userData, db)
             elif user_choice == '8':
+                create_profile(db, userData.id)
+            elif user_choice == '0':
                 print("Goodbye")
                 break
             else:
@@ -526,8 +529,6 @@ def disconnect_from_friend(user_id: int, friend_id: int, db: Session):
         print("Successfully disconnected from the friend.")
     else:
         print("Friendship not found.")
-
-
 
 def find_new_friends_and_send_request(userData: UserInfo, db):
     last_name_to_search = input("Enter the last name to search: ")
@@ -625,6 +626,152 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
             print("Invalid User ID. No pending friend request found for the specified user.")
     except ValueError:
         print("Invalid User ID. Please enter a valid numeric User ID.")
+
+
+def create_profile(db, userData):
+    # Check if the user already has a profile
+    existing_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    if existing_profile:
+        print("You already have a profile. Would you like to update it?")
+        update_profile_option = input("Enter 'yes' to update or 'no' to exit: ").lower()
+        if update_profile_option == 'yes':
+            edit_profile_sections(db, userData, existing_profile)
+        else:
+            print("Exiting profile creation.")
+            main_hub(userData, db)
+        return
+
+    # Create UserProfile object with default values
+    profile = models.UserProfile(
+        title="N/A",
+        major="N/A",
+        university_name="N/A",
+        about_student="N/A",
+        experience=[],
+        education=[],
+        user=userData
+    )
+    db.add(profile)
+    db.commit()
+
+    print("Profile creation successful!")
+    edit_profile_sections(db, userData, profile)
+
+def edit_profile_sections(db, userData, profile):
+    while True:
+        print("What part of your profile would you like to update?")
+        print("1. Title")
+        print("2. Major")
+        print("3. University Name")
+        print("4. About")
+        print("5. Experience")
+        print("6. Education")
+        print("0. Exit")
+
+        option = input("Enter the number corresponding to the part you want to update: ")
+
+        if option == '1':
+            profile.title = input("Enter a new title: ")
+        elif option == '2':
+            profile.major = input("Enter your major: ").title()
+        elif option == '3':
+            profile.university_name = input("Enter your university name: ").title()
+        elif option == '4':
+            profile.about_student = input("Enter information about yourself: ")
+        elif option == '5':
+            edit_experience(db, userData)
+        elif option == '6':
+            edit_education(db, userData)
+        elif option == '0':
+            db.commit()
+            print("Profile updated successfully!")
+            main_hub(userData, db)  # Redirect to main hub
+            break
+        else:
+            print("Invalid option. Please enter a number between 0 and 6.")
+
+def edit_experience(db, userData):
+    # Fetch the user's existing profile
+    existing_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    if not existing_profile:
+        print("User profile not found.")
+        return
+
+    # Display the current experience information
+    print("Current Experience Information:")
+    for i, experience in enumerate(existing_profile.experiences, start=1):
+        print(f"Experience {i}:")
+        print(f"Title: {experience.title}")
+        print(f"Employer: {experience.employer}")
+        print(f"Date Started: {experience.date_started}")
+        print(f"Date Ended: {experience.date_ended}")
+        print(f"Location: {experience.location}")
+        print(f"Description: {experience.description}")
+        print()
+
+    # Prompt the user to select an experience to edit
+    experience_index = int(input("Enter the index of the experience you want to edit (or 0 to cancel): "))
+    if experience_index == 0:
+        return
+
+    if experience_index < 1 or experience_index > len(existing_profile.experiences):
+        print("Invalid experience index.")
+        return
+
+    # Select the experience to edit
+    experience_to_edit = existing_profile.experiences[experience_index - 1]
+
+    # Prompt the user to enter new experience information
+    print("Enter new experience information:")
+    title = input("Title: ")
+    employer = input("Employer: ")
+    date_started = input("Date Started: ")
+    date_ended = input("Date Ended: ")
+    location = input("Location: ")
+    description = input("Description: ")
+
+    # Update the experience information
+    experience_to_edit.title = title
+    experience_to_edit.employer = employer
+    experience_to_edit.date_started = date_started
+    experience_to_edit.date_ended = date_ended
+    experience_to_edit.location = location
+    experience_to_edit.description = description
+
+    # Commit the changes to the database
+    db.commit()
+    print("Experience information updated successfully.")
+
+
+def edit_education(db, userData):
+    # Fetch the user's existing profile
+    existing_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    if not existing_profile:
+        print("User profile not found.")
+        return
+
+    # Display the current education information
+    print("Current Education Information:")
+    print(f"School: {existing_profile.school}")
+    print(f"Degree: {existing_profile.degree}")
+    print(f"Years Attended: {existing_profile.years_attended}")
+    print()
+
+    # Prompt the user to enter new education information
+    print("Enter new education information:")
+    school = input("School: ")
+    degree = input("Degree: ")
+    years_attended = input("Years Attended: ")
+
+    # Update the education information
+    existing_profile.school = school
+    existing_profile.degree = degree
+    existing_profile.years_attended = years_attended
+
+    # Commit the changes to the database
+    db.commit()
+    print("Education information updated successfully.")
+
 
 
 

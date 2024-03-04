@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, MetaData, PrimaryKeyConstraint
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, MetaData, PrimaryKeyConstraint, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
@@ -21,7 +21,6 @@ class GuestControl(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     user = relationship("User", back_populates="guest_control")
 
-
 class User(Base):  # creating a class User
     __tablename__ = "users"  # name of the table
     id = Column(Integer, primary_key=True, index=True)  # creating a column id
@@ -36,8 +35,43 @@ class User(Base):  # creating a class User
     first_name = Column(String, unique=True, nullable=False)
     # creating a column last_name
     last_name = Column(String, unique=True, nullable=False)
-
     guest_control = relationship("GuestControl", uselist=False, back_populates="user")
+    profile = relationship("UserProfile", uselist=False, back_populates="user")
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, default="N/A")
+    major = Column(String, default="N/A")
+    university_name = Column(String, default="N/A")
+    about_student = Column(Text, default="N/A")
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+
+    user = relationship("User", back_populates="profile")
+    experience = relationship("Experience", back_populates="user_profile", cascade="all, delete-orphan")
+    education = relationship("Education", back_populates="user_profile", cascade="all, delete-orphan")
+
+class Experience(Base):
+    __tablename__ = "experiences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    employer = Column(String, nullable=False)
+    date_started = Column(String, nullable=False)
+    date_ended = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    user_profile_id = Column(Integer, ForeignKey("user_profiles.id"))
+
+class Education(Base):
+    __tablename__ = "educations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_name = Column(String, nullable=False)
+    degree = Column(String, nullable=False)
+    years_attended = Column(String, nullable=False)
+    user_profile_id = Column(Integer, ForeignKey("user_profiles.id"))
 
 
 class Post(Base):
