@@ -1,12 +1,42 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
 import re
 import hashlib
 from user import UserCreate, UserInfo, Friends
 import models
 from sqlalchemy.orm import Session
-from database import get_db
+import crud
+from database import get_db, SessionLocal, engine
 from sqlalchemy.sql import func
 from sqlalchemy import or_, and_
 from sqlalchemy.exc import SQLAlchemyError
+
+
+app = FastAPI()
+
+class UserProfileCreate(BaseModel):
+    title: str
+    major: str
+    university_name: str
+    about_student: str
+
+@app.post("/profiles/", response_model=models.UserProfile)
+def create_user_profile(user_profile: UserProfileCreate, db: Session = Depends(get_db)):
+    return crud.create_user_profile(db=db, user_profile=user_profile)
+
+@app.get("/profiles/{user_id}", response_model=models.UserProfile)
+def read_user_profile(user_id: int, db: Session = Depends(get_db)):
+    return crud.get_user_profile(db=db, user_id=user_id)
+
+@app.put("/profiles/{user_id}", response_model=models.UserProfile)
+def update_user_profile(user_id: int, user_profile: UserProfileCreate, db: Session = Depends(get_db)):
+    return crud.update_user_profile(db=db, user_id=user_id, user_profile=user_profile)
+
+@app.get("/profiles/{friend_id}/friends/", response_model=List[models.User])
+def read_friends_profiles(friend_id: int, db: Session = Depends(get_db)):
+    return crud.get_friends_profiles(db=db, friend_id=friend_id)
+
 
 
 def check_password(password):
@@ -308,6 +338,14 @@ def signup(db):
         else:
             print("Signup cancelled.")
             return
+        
+    # Prompt the user to enter profile information
+    title = input("Enter your title: ")
+    major = input("Enter your major: ")
+    university_name = input("Enter your university name: ")
+    about_student = input("Enter information about yourself: ")
+
+    # Save profile information to the database
 
 
 def login(db):
@@ -790,6 +828,38 @@ def learn_new_skills(userData: UserInfo, db):
     else:
         print("Goodbye")
         return
+
+
+# Adjustments to Profile Viewing
+
+def view_profile(userData: UserInfo, db):
+    # Retrieve and display the user's profile
+    user_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    if user_profile:
+        print("Profile Information:")
+        print(f"Title: {user_profile.title}")
+        print(f"Major: {user_profile.major}")
+        print(f"University: {user_profile.university_name}")
+        print(f"About: {user_profile.about_student}")
+        # Display experience and education information
+    else:
+        print("Profile not found")
+
+
+# Adjustments to Viewing Friend Profiles
+
+def view_friend_profile(userData: UserInfo, friend_id: int, db):
+    # Retrieve and display the profile of a friend
+    friend_profile = db.query(models.UserProfile).filter_by(user_id=friend_id).first()
+    if friend_profile:
+        print("Friend's Profile Information:")
+        print(f"Title: {friend_profile.title}")
+        print(f"Major: {friend_profile.major}")
+        print(f"University: {friend_profile.university_name}")
+        print(f"About: {friend_profile.about_student}")
+        # Display experience and education information
+    else:
+        print("Friend's profile not found")
 
 
 db = next(get_db())
