@@ -1,8 +1,10 @@
+from sqlalchemy import Table, Column, Integer, ForeignKey, TIMESTAMP, text
+# Assuming this imports your declarative base and other required elements
+from database import Base
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, MetaData, PrimaryKeyConstraint, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
-from database import Base  #
 from sqlalchemy.ext.declarative import declarative_base
 from database import engine
 
@@ -43,6 +45,7 @@ class User(Base):  # creating a class User
     guest_control = relationship(
         "GuestControl", uselist=False, back_populates="user")
     profile = relationship("UserProfile", uselist=False, back_populates="user")
+    applications = relationship("JobApplication", back_populates="user")
 
 
 class UserProfile(Base):
@@ -102,6 +105,24 @@ class Post(Base):
     user = relationship("User")
 
 
+class JobPost(Base):
+    __tablename__ = "job_posts"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    employer = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    salary = Column(Integer, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text('now()'))
+
+    # Define relationships
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    user = relationship("User")
+    # applications = relationship("JobApplication", back_populates="job_post")
+    applications = relationship(
+        "JobApplication", back_populates="job_post", cascade="all, delete")
+
+
 class Friendship(Base):
     __tablename__ = "friendships"
     user_id = Column(Integer, ForeignKey(
@@ -133,6 +154,20 @@ class ProspectiveConnection(Base):
     caller = relationship("User", foreign_keys=[caller_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
     # Define a composite primary key constraint
+
+
+class JobApplication(Base):
+    __tablename__ = 'job_applications'
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    job_post_id = Column(Integer, ForeignKey(
+        'job_posts.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey(
+        'users.id', ondelete='CASCADE'), nullable=False)
+    applied_at = Column(TIMESTAMP, server_default=text('now()'))
+
+    # Relationships
+    job_post = relationship("JobPost", back_populates="applications")
+    user = relationship("User", back_populates="applications")
 
 
 Base.metadata.create_all(engine)  # creating the table
