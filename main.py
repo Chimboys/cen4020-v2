@@ -361,7 +361,8 @@ def main_hub(userData: UserInfo = None, db=None):
         print("1. Useful Links")
         print("2. Important Links")
         print("3. User Actions")
-        print("4. Job search and Internships")
+        if userData:
+            print("4. Job search and Internships")
         print("5. Exit")
         initial_choice = input("Enter your choice: ").lower()
 
@@ -435,7 +436,8 @@ def user_actions(userData, db):
             user_choice = input("Enter your choice: ").lower()
 
             if user_choice == '1':
-                # search_job(userData, db)
+                job_actions(userData, db)
+
                 pass
             elif user_choice == '2':
                 find_new_friends_and_send_request(userData, db)
