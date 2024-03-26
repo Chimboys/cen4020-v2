@@ -1,6 +1,8 @@
 import re
 import hashlib
 from user import UserCreate, UserInfo, Friends
+# Importing the job_actions function from jobs_func.py
+from jobs_func import job_actions
 import models
 from sqlalchemy.orm import Session
 from database import get_db
@@ -31,8 +33,9 @@ def find_user_by_first_last_name(first_name: str, last_name: str, db: Session):
         print("Person is a part of the InCollege system")
         signup(db)
     else:
-        print("They are not a part of the InCollege system") 
+        print("They are not a part of the InCollege system")
         print("Goodbye")
+
 
 def handle_useful_links_choice(userData, db, choice):
     if choice == 1:
@@ -41,6 +44,7 @@ def handle_useful_links_choice(userData, db, choice):
         print("Under construction for Browse InCollege, Business Solutions, Directories")
     else:
         print("Invalid choice")
+
 
 def handle_general_links(userData):
     print("General Links:")
@@ -73,7 +77,8 @@ def handle_general_links(userData):
 
 def handle_guest_controls(userData, db):
     print("Guest Controls:")
-    val = db.query(models.GuestControl).filter(models.GuestControl.user_id == userData.id).first()
+    val = db.query(models.GuestControl).filter(
+        models.GuestControl.user_id == userData.id).first()
     print("Select the guest control you would like to see:")
     print("1. InCollege Email", val.incollege_email_enabled)
     print("2. SMS", val.sms_enabled)
@@ -97,7 +102,6 @@ def handle_guest_controls(userData, db):
         else:
             print("Invalid choice")
 
-    
 
 def handle_important_links_choice(userData, db, choice):
     # Implement logic for handling each important link based on the choice
@@ -115,14 +119,15 @@ def handle_important_links_choice(userData, db, choice):
         else:
             print("Log in to access Guest Controls")
     elif choice == 1:
-        print("Copyright (c) [Year] [Full Name]","All rights reserved.","This software, InCollege, is the property of Team Beige. Any redistribution, modification, or reproduction is not permitted without the express consent of team Beige.",end="\n")
+        print("Copyright (c) [Year] [Full Name]", "All rights reserved.",
+              "This software, InCollege, is the property of Team Beige. Any redistribution, modification, or reproduction is not permitted without the express consent of team Beige.", end="\n")
 
-    elif choice ==2:
+    elif choice == 2:
         print("InCollege is a dedicated platform designed to empower college students in their job search by providing a space exclusively for them and potential employers. Join InCollege today and take a step towards shaping your professional future.")
-        
+
     elif choice == 3:
         print("Empowering inclusive education: Our inCollege app is designed with accessibility in mind, ensuring a seamless and enriching experience for users of all abilities.")
-    
+
     elif choice == 4:
         print("""
 User Agreement
@@ -155,7 +160,7 @@ USF Computer Science Department
 
     elif choice == 8:
         print("InCollege app is committed to fostering inclusive education, providing a seamless and enriching experience for users of all abilities, promoting diversity, and ensuring a safe and supportive learning environment.")
-    
+
     elif choice == 9:
         print("1. Language Preference")
         print("0. Exit")
@@ -173,9 +178,11 @@ USF Computer Science Department
     else:
         print("Invalid choice")
 
+
 def handle_language_preference(userData, db):
     print("Language Controls:")
-    val = db.query(models.GuestControl).filter(models.GuestControl.user_id == userData.id).first()
+    val = db.query(models.GuestControl).filter(
+        models.GuestControl.user_id == userData.id).first()
     print("Select an option:")
     print("1. Language preference", val.language_preference)
     print("0. Exit")
@@ -201,17 +208,16 @@ def handle_language_preference(userData, db):
         else:
             print("Invalid choice")
 
-    
 
-
-def find_user_by_first_last_name_login(first_name: str, last_name: str, userData:UserInfo, db: Session):
+def find_user_by_first_last_name_login(first_name: str, last_name: str, userData: UserInfo, db: Session):
     if db.query(models.User).filter(and_(models.User.first_name == first_name, models.User.last_name == last_name)).first():
         print("Person is a part of the InCollege system")
-        
+
         signup(db)
     else:
         print("They are not a part of the InCollege system")
-        new_prospective_connection = models.ProspectiveConnection(caller_id=userData.id, first_name=first_name, last_name=last_name)
+        new_prospective_connection = models.ProspectiveConnection(
+            caller_id=userData.id, first_name=first_name, last_name=last_name)
         db.add(new_prospective_connection)
         db.commit()
         main_hub(userData, db)
@@ -267,6 +273,8 @@ def signup(db):
             if continue_signup.lower() == 'yes':
                 login(db)
             return
+        else:
+            print("Not duplicate")
         user_create = UserCreate(username=username, hashed_password=hashed_password,
                                  school=school, first_name=first_name, last_name=last_name)
         new_user = models.User(**user_create.dict())
@@ -296,7 +304,7 @@ def signup(db):
         #     db.add(friendship)
         #     db.delete(remainder)
         #     db.commit()
-        
+
         main_hub(user, db)
 
     else:
@@ -337,39 +345,13 @@ def login(db):
 
     main_hub(user, db)
 
+
 def logout(userData, db):
     print("Logout successful")
     return None, None  # Returning None for userData and db
 
 
-def post_a_job(userData: UserInfo, db):
-    while True:
-        try:
-            title = input("Enter the title of the job: ")
-            content = input("Enter the content of the job: ")
-            post = models.Post(title=title, content=content,
-                               user_id=userData.id)
-            db.add(post)
-            db.commit()
-            print("Job posted", "\n")
-            print("do you want to post another job? (yes/no)")
-            choice = input("Enter your choice: ")
-            if choice.lower() == 'no':
-                main_hub(userData, db)
-                return
-
-        except SQLAlchemyError:
-            print("Error posting job")
-            choice = input(
-                "Would you like to go back to the main hub? (yes/no): ")
-
-            if choice.lower() == 'yes':
-                main_hub(userData, db)
-            else:
-                print("Re-enter details", "\n")
-
-
-def main_hub(userData: UserInfo=None, db=None):
+def main_hub(userData: UserInfo = None, db=None):
 
     while True:
         print("Welcome to InCollege!")
@@ -379,10 +361,11 @@ def main_hub(userData: UserInfo=None, db=None):
         print("1. Useful Links")
         print("2. Important Links")
         print("3. User Actions")
-        print("4. Exit")
+        print("4. Job search and Internships")
+        print("5. Exit")
         initial_choice = input("Enter your choice: ").lower()
 
-        if initial_choice == '4':
+        if initial_choice == '5':
             print("Goodbye")
             break
         elif initial_choice == '1':
@@ -391,6 +374,8 @@ def main_hub(userData: UserInfo=None, db=None):
             explore_links(userData, db, "Important Links")
         elif initial_choice == '3':
             userData, db = user_actions(userData, db)
+        elif initial_choice == '4':
+            job_actions(userData, db)
         else:
             print("Invalid choice")
 
@@ -433,6 +418,7 @@ def explore_links(userData, db, link_type):
         else:
             print("Invalid choice")
 
+
 def user_actions(userData, db):
     while True:
         if userData:
@@ -444,8 +430,7 @@ def user_actions(userData, db):
             print("4. View all friends")
             print("5. Handle Friend Requests")
             print("6. Logout")
-            print("7. Job search and Internships")
-            print("8. Create/Update User Profile")            
+            print("7. Create/Update User Profile")
             print("0. Exit")
             user_choice = input("Enter your choice: ").lower()
 
@@ -458,10 +443,13 @@ def user_actions(userData, db):
                 learn_new_skills(userData, db)
             elif user_choice == '4':
                 view_all_friends(userData, db)
-                disconnect_choice = input("Do you want to disconnect from a friend? (yes/no): ")
+                disconnect_choice = input(
+                    "Do you want to disconnect from a friend? (yes/no): ")
                 if disconnect_choice.lower() == 'yes':
-                    friend_id_to_disconnect = int(input("Enter the User ID of the friend you want to disconnect from: "))
-                    disconnect_from_friend(userData.id, friend_id_to_disconnect, db)
+                    friend_id_to_disconnect = int(
+                        input("Enter the User ID of the friend you want to disconnect from: "))
+                    disconnect_from_friend(
+                        userData.id, friend_id_to_disconnect, db)
             elif user_choice == '5':
                 handle_friend_requests(userData, db)
             elif user_choice == '6':
@@ -469,8 +457,6 @@ def user_actions(userData, db):
                 if userData is None and db is None:
                     break
             elif user_choice == '7':
-                post_a_job(userData, db)
-            elif user_choice == '8':
                 create_profile(db, userData.id)
             elif user_choice == '0':
                 print("Goodbye")
@@ -480,7 +466,7 @@ def user_actions(userData, db):
         else:
             print("You need to log in to perform user actions.")
             signup(db)
-    
+
     return userData, db
 
 
@@ -517,10 +503,12 @@ def view_all_friends(userData: UserInfo, db):
         print("Goodbye")
         return
 
+
 def disconnect_from_friend(user_id: int, friend_id: int, db: Session):
     friendship = db.query(models.Friendship).filter(
         ((models.Friendship.user_id == user_id) & (models.Friendship.friend_id == friend_id)) |
-        ((models.Friendship.user_id == friend_id) & (models.Friendship.friend_id == user_id))
+        ((models.Friendship.user_id == friend_id) &
+         (models.Friendship.friend_id == user_id))
     ).first()
 
     if friendship:
@@ -530,21 +518,24 @@ def disconnect_from_friend(user_id: int, friend_id: int, db: Session):
     else:
         print("Friendship not found.")
 
+
 def find_new_friends_and_send_request(userData: UserInfo, db):
     last_name_to_search = input("Enter the last name to search: ")
     matching_users = db.query(models.User).filter(
         models.User.last_name == last_name_to_search).all()
-    
+
     if not matching_users:
         print(f"No users found with the last name '{last_name_to_search}'.")
         main_hub(userData, db)
         return
-    
+
     print("Matching Users:")
     for user in matching_users:
-        print(f"User ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}, School: {user.school}")
+        print(
+            f"User ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}, School: {user.school}")
 
-    user_id_to_add = input("Enter the User ID you want to send a friend request to (or enter '0' to go back to the main hub): ")
+    user_id_to_add = input(
+        "Enter the User ID you want to send a friend request to (or enter '0' to go back to the main hub): ")
 
     if user_id_to_add == '0':
         main_hub(userData, db)
@@ -555,21 +546,25 @@ def find_new_friends_and_send_request(userData: UserInfo, db):
         if user_id_to_add == userData.id:
             print("You cannot send a friend request to yourself.")
         elif db.query(models.Friendship).filter(or_(
-                and_(models.Friendship.user_id == userData.id, models.Friendship.friend_id == user_id_to_add),
+                and_(models.Friendship.user_id == userData.id,
+                     models.Friendship.friend_id == user_id_to_add),
                 and_(models.Friendship.user_id == user_id_to_add, models.Friendship.friend_id == userData.id))).first():
             print("Friendship already exists.")
         else:
             send_friend_request(userData.id, user_id_to_add, db)
     except ValueError:
         print("Invalid User ID. Please enter a valid numeric User ID.")
-    
+
     main_hub(userData, db)
 
+
 def send_friend_request(caller_id, receiver_id, db):
-    new_prospective_connection = models.ProspectiveConnection(caller_id=caller_id, receiver_id=receiver_id)
+    new_prospective_connection = models.ProspectiveConnection(
+        caller_id=caller_id, receiver_id=receiver_id)
     db.add(new_prospective_connection)
     db.commit()
     print("Friend request sent successfully.")
+
 
 def handle_friend_requests(userData: UserInfo, db):
     while True:
@@ -584,9 +579,11 @@ def handle_friend_requests(userData: UserInfo, db):
             break
         else:
             print("Invalid choice")
-        
+
+
 def accept_or_reject_friend_requests(userData: UserInfo, db):
-    pending_requests = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.receiver_id == userData.id).all()
+    pending_requests = db.query(models.ProspectiveConnection).filter(
+        models.ProspectiveConnection.receiver_id == userData.id).all()
 
     if not pending_requests:
         print("No pending friend requests.")
@@ -594,10 +591,13 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
 
     print("Pending Friend Requests:")
     for request in pending_requests:
-        caller = db.query(models.User).filter(models.User.id == request.caller_id).first()
-        print(f"User ID: {caller.id}, First Name: {caller.first_name}, Last Name: {caller.last_name}, School: {caller.school}")
+        caller = db.query(models.User).filter(
+            models.User.id == request.caller_id).first()
+        print(
+            f"User ID: {caller.id}, First Name: {caller.first_name}, Last Name: {caller.last_name}, School: {caller.school}")
 
-    user_id_to_accept_or_reject = input("Enter the User ID you want to accept or reject as a friend (or enter '0' to cancel): ")
+    user_id_to_accept_or_reject = input(
+        "Enter the User ID you want to accept or reject as a friend (or enter '0' to cancel): ")
 
     if user_id_to_accept_or_reject == '0':
         return
@@ -612,7 +612,8 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
             choice = input("Do you want to accept or reject: ")
 
             if choice == 1:
-                friend = Friends(user_id=user_id_to_accept_or_reject, friend_id=userData.id)
+                friend = Friends(
+                    user_id=user_id_to_accept_or_reject, friend_id=userData.id)
                 friendship = models.Friendship(**friend.dict())
                 db.add(friendship)
                 db.delete(prospective_connection)
@@ -623,17 +624,20 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
                 db.commit()
                 print("Friend request rejected successfully")
         else:
-            print("Invalid User ID. No pending friend request found for the specified user.")
+            print(
+                "Invalid User ID. No pending friend request found for the specified user.")
     except ValueError:
         print("Invalid User ID. Please enter a valid numeric User ID.")
 
 
 def create_profile(db, userData):
     # Check if the user already has a profile
-    existing_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    existing_profile = db.query(models.UserProfile).filter_by(
+        user_id=userData.id).first()
     if existing_profile:
         print("You already have a profile. Would you like to update it?")
-        update_profile_option = input("Enter 'yes' to update or 'no' to exit: ").lower()
+        update_profile_option = input(
+            "Enter 'yes' to update or 'no' to exit: ").lower()
         if update_profile_option == 'yes':
             edit_profile_sections(db, userData, existing_profile)
         else:
@@ -657,6 +661,7 @@ def create_profile(db, userData):
     print("Profile creation successful!")
     edit_profile_sections(db, userData, profile)
 
+
 def edit_profile_sections(db, userData, profile):
     while True:
         print("What part of your profile would you like to update?")
@@ -668,14 +673,16 @@ def edit_profile_sections(db, userData, profile):
         print("6. Education")
         print("0. Exit")
 
-        option = input("Enter the number corresponding to the part you want to update: ")
+        option = input(
+            "Enter the number corresponding to the part you want to update: ")
 
         if option == '1':
             profile.title = input("Enter a new title: ")
         elif option == '2':
             profile.major = input("Enter your major: ").title()
         elif option == '3':
-            profile.university_name = input("Enter your university name: ").title()
+            profile.university_name = input(
+                "Enter your university name: ").title()
         elif option == '4':
             profile.about_student = input("Enter information about yourself: ")
         elif option == '5':
@@ -690,9 +697,11 @@ def edit_profile_sections(db, userData, profile):
         else:
             print("Invalid option. Please enter a number between 0 and 6.")
 
+
 def edit_experience(db, userData):
     # Fetch the user's existing profile
-    existing_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    existing_profile = db.query(models.UserProfile).filter_by(
+        user_id=userData.id).first()
     if not existing_profile:
         print("User profile not found.")
         return
@@ -710,7 +719,8 @@ def edit_experience(db, userData):
         print()
 
     # Prompt the user to select an experience to edit
-    experience_index = int(input("Enter the index of the experience you want to edit (or 0 to cancel): "))
+    experience_index = int(
+        input("Enter the index of the experience you want to edit (or 0 to cancel): "))
     if experience_index == 0:
         return
 
@@ -745,7 +755,8 @@ def edit_experience(db, userData):
 
 def edit_education(db, userData):
     # Fetch the user's existing profile
-    existing_profile = db.query(models.UserProfile).filter_by(user_id=userData.id).first()
+    existing_profile = db.query(models.UserProfile).filter_by(
+        user_id=userData.id).first()
     if not existing_profile:
         print("User profile not found.")
         return
@@ -771,8 +782,6 @@ def edit_education(db, userData):
     # Commit the changes to the database
     db.commit()
     print("Education information updated successfully.")
-
-
 
 
 def learn_new_skills(userData: UserInfo, db):
