@@ -46,7 +46,19 @@ class User(Base):  # creating a class User
         "GuestControl", uselist=False, back_populates="user")
     profile = relationship("UserProfile", uselist=False, back_populates="user")
     applications = relationship("JobApplication", back_populates="user")
+    premium = Column(Boolean, default=False, nullable=False)
 
+class Message(Base):
+    __tablename__ = "messages"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sender_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    receiver_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    content = Column(String, nullable=False)
+    sent_at = Column(TIMESTAMP, server_default=text('now()'))
+
+    # Define relationships
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
