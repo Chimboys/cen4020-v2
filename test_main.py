@@ -1,5 +1,8 @@
 import pytest
+from unittest.mock import patch
+
 from sqlalchemy.orm import Session
+import sqlalchemy
 from main import (
     check_password,
     find_user_by_first_last_name,
@@ -12,7 +15,9 @@ from main import (
     find_new_friends,
     add_friends,
     learn_new_skills,
-    db
+    db,
+    User, 
+    UserCreate
 )
 
 # Fixture for initializing a test database session
@@ -20,6 +25,39 @@ from main import (
 def test_db_session():
     yield next(db)
 
+
+def populate_db():
+    db = test_db_session()
+    # Assuming the database is empty
+    new_user = User(username="Tester1", hashed_password="ValidPassword1!", email="test1@gmail.com",
+                school="USF", first_name="Akmal", last_name="Kurbanov", premium=False)
+    new_user2 = User(username="Tester2", hashed_password="ValidPassword1!", email="test2@gmail.com",
+                                 school="USF", first_name="Umar", last_name="Khan", premium=False)
+    new_user3 = User(username="Tester3", hashed_password="ValidPassword1!", email="test3@gmail.com",
+                                 school="USF", first_name="Mukund", last_name="Mukund Sharma", premium=False)
+    
+    db.add(new_user)
+    db.add(new_user2)
+    db.add(new_user3)
+    db.commit()
+
+    
+def clear_db():
+    db = test_db_session()
+    db.query(User).delete()
+    db.commit()
+
+
+@patch('builtins.input', side_effect=['no', 'no', 'yes', 'ValidPassword1', 'Tester4' ,'Test School', 'Test', 'User'])
+def test_signup(mock_input, test_db_session):
+    # Call the signup function
+    result = signup(test_db_session)
+    assert result == "Test Completed"
+
+
+   
+    
+                  
 
 def test_check_password_valid():
     assert check_password("ValidPassword1!") == True

@@ -348,8 +348,8 @@ def find_user_by_first_last_name_login(first_name: str, last_name: str, userData
 def signup(db):
     # Get user input
     print("Sarah, a determined college student majoring in marketing, faced challenges in finding internships and entry-level positions that aligned with her goals. However, her journey took a positive turn when she discovered InCollege, a specialized job search website for college students. This platform provided curated job listings, networking opportunities, and time-saving tools tailored to Sarah's needs. With InCollege's support, Sarah secured a dream internship at a tech startup, built a strong professional network, and experienced both academic and professional growth. Ultimately, Sarah's success story highlights how leveraging specialized resources can empower college students to kickstart their careers and achieve their goals", "\n")
-
     print("Welcome to InCollege: Where you can find your dream job, make new friends, and learn new skills.", "\n")
+
     ans = input("Would you like to view success video? (yes/no): ")
     if ans.lower() == 'yes':
         print("Video playing at https://www.youtube.com/watch?v=dQw4w9WgXcQ", "\n")
@@ -370,6 +370,7 @@ def signup(db):
         else:
             print("Goodbye")
             return
+    
 
     hashed_password = input("Enter your password: ")
 
@@ -427,7 +428,8 @@ def signup(db):
         #     db.delete(remainder)
         #     db.commit()
 
-        main_hub(user, db)
+        skipVarforTest = main_hub(user, db)
+        return "Test Completed"
 
     else:
 
@@ -957,9 +959,13 @@ def learn_new_skills(userData: UserInfo, db):
         print("Goodbye")
         return
 
+def main():
+    db = next(get_db())
+    try:
+        main_hub(db=db)
+    finally:
+        db.close()
 
-db = next(get_db())
-try:
-    main_hub(db=db)
-finally:
-    db.close()
+if __name__ == "__main__":
+    main()
+
