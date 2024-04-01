@@ -45,11 +45,13 @@ def handle_useful_links_choice(userData, db, choice):
     else:
         print("Invalid choice")
 
+
 def upgrade_to_premium(userData, db):
     userData.premium = True
     db.commit()
     print("You are now a premium user")
     message_handler(userData, db)
+
 
 def message_handler(userData, db):
     print("Messages:")
@@ -64,10 +66,12 @@ def message_handler(userData, db):
         get_messages(userData, db)
     elif choice == '2':
         view_all_friends(userData, db)
-        receiver_id = int(input("Enter the ID of the user you want to send a message to: "))
+        receiver_id = int(
+            input("Enter the ID of the user you want to send a message to: "))
         send_message_friend(userData, receiver_id, db)
     elif choice == '3':
-        message_id = int(input("Enter the ID of the message you want to delete: "))
+        message_id = int(
+            input("Enter the ID of the message you want to delete: "))
         delete_message(userData, message_id, db)
     elif choice == '4':
         if userData.premium == True:
@@ -85,9 +89,11 @@ def message_handler(userData, db):
 def send_message_premium(userData, db):
     users = db.query(models.User).all()
     for user in users:
-        print(f"ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}")
+        print(
+            f"ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}")
     print()
-    receiver_id = int(input("Enter the ID of the user you want to send a message to: "))
+    receiver_id = int(
+        input("Enter the ID of the user you want to send a message to: "))
     if receiver_id == userData.user_id:
         print("You cannot send a message to yourself")
         print()
@@ -97,7 +103,8 @@ def send_message_premium(userData, db):
         print()
         message_handler(userData, db)
     message = input("Enter your message: ")
-    new_message = models.Message(sender_id=userData.user_id, receiver_id=receiver_id, content=message)
+    new_message = models.Message(
+        sender_id=userData.user_id, receiver_id=receiver_id, content=message)
     db.add(new_message)
     db.commit()
     print("Message sent successfully")
@@ -112,8 +119,10 @@ def get_messages(userData, db):
         print()
         message_handler(userData, db)
 
+
 def delete_message(userData, message_id, db):
-    message = db.query(models.Message).filter(models.Message.id == message_id).first()
+    message = db.query(models.Message).filter(
+        models.Message.id == message_id).first()
     if message:
         db.delete(message)
         db.commit()
@@ -122,21 +131,24 @@ def delete_message(userData, message_id, db):
         print("Message not found")
     message_handler(userData, db)
 
-    
+
 def send_message_friend(userData, db):
     message = input("Enter your message: ")
-    receiver_id = int(input("Enter the ID of the user you want to send a message to: "))
+    receiver_id = int(
+        input("Enter the ID of the user you want to send a message to: "))
     users = db.query(models.User).all()
     if receiver_id == userData.user_id:
         print("You cannot send a message to yourself")
         message_handler(userData, db)
     if userData.premium == False:
-        friends = db.query(models.Friendship).filter((models.Friendship.userData.user_id == userData.user_id)).all()
+        friends = db.query(models.Friendship).filter(
+            (models.Friendship.userData.user_id == userData.user_id)).all()
         if receiver_id not in friends:
             print("You can only send messages to your friends without premium")
             message_handler(userData, db)
-    
-    new_message = models.Message(sender_id=userData.user_id, receiver_id=receiver_id, content=message)
+
+    new_message = models.Message(
+        sender_id=userData.user_id, receiver_id=receiver_id, content=message)
     db.add(new_message)
     db.commit()
     print("Message sent successfully")
@@ -217,20 +229,19 @@ def handle_important_links_choice(userData, db, choice):
             sub_choice = input("Enter your choice: ")
             if sub_choice == '1':
                 handle_guest_controls(userData, db)
-               
+
             elif sub_choice == '0':
                 main_hub(userData, db)
-                
+
             else:
                 print("Invalid choice")
-                
+
         else:
             print("Log in to access Guest Controls")
             print()
     elif choice == 1:
         print("Copyright (c) [Year] [Full Name]", "All rights reserved.",
               "This software, InCollege, is the property of Team Beige. Any redistribution, modification, or reproduction is not permitted without the express consent of team Beige.", end="\n")
-        
 
     elif choice == 2:
         print("InCollege is a dedicated platform designed to empower college students in their job search by providing a space exclusively for them and potential employers. Join InCollege today and take a step towards shaping your professional future.")
@@ -325,7 +336,7 @@ def handle_language_preference(userData, db):
                 print()
         elif choice == 'No':
             main_hub(userData, db)
-            
+
         else:
             print("Invalid choice")
 
@@ -405,27 +416,27 @@ def signup(db):
         user = UserInfo(id=new_user.id, username=new_user.username, school=new_user.school,
                         first_name=new_user.first_name, last_name=new_user.last_name)
         default_guest_control = models.GuestControl(
-        incollege_email_enabled=True,
-        sms_enabled=True,
-        targeted_advertising_enabled=True,
-        user_id=new_user.id 
+            incollege_email_enabled=True,
+            sms_enabled=True,
+            targeted_advertising_enabled=True,
+            user_id=new_user.id
         )
-        
+
         db.add(default_guest_control)
         db.commit()
 
         new_user.guest_control = default_guest_control
         db.commit()
 
-        # remainder = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.first_name == first_name, models.ProspectiveConnection.last_name == last_name).first()
-        # if remainder:
-        #     caller = db.query(models.User).filter(models.User.id == remainder.caller_id).first()
-        #     print(f"Hi, {caller.first_name} {caller.last_name} was looking for you")
-        #     friend = Friends(userData.user_id=caller.id, friend_id=new_user.id)
-        #     friendship = models.Friendship(**friend.dict())
-        #     db.add(friendship)
-        #     db.delete(remainder)
-        #     db.commit()
+        existing_users = db.query(models.User).filter(
+            models.User.id != new_user.id).all()
+
+        for user in existing_users:
+            notification = models.UserNotification(
+                new_user_id=new_user.id, notified_user_id=user.id)
+            db.add(notification)
+
+        db.commit()
 
         main_hub(user, db)
 
@@ -464,6 +475,23 @@ def login(db):
     print("Login successfuly")
     user = UserInfo(id=queryUser.id, username=queryUser.username, school=queryUser.school,
                     first_name=queryUser.first_name, last_name=queryUser.last_name)
+
+    notifications = db.query(models.UserNotification).join(models.User, models.User.id == models.UserNotification.new_user_id).filter(
+        models.UserNotification.notified_user_id == queryUser.id,
+        models.UserNotification.delivered == False
+    ).all()
+
+    if not notifications:
+        print("No new notifications.")
+
+    else:
+        for notification in notifications:
+            new_user = db.query(models.User).filter_by(
+                id=notification.new_user_id).first()
+            print(f"{new_user.first_name} {new_user.last_name} has joined InCollege.")
+            notification.delivered = True
+
+    db.commit()
 
     main_hub(user, db)
 
@@ -525,7 +553,7 @@ def explore_links(userData, db, link_type):
             print("2. Browse InCollege")
             print("3. Business Solutions")
             print("4. Directories")
-           
+
         elif link_type == "Important Links":
             print("1. Copyright Notice")
             print("2. About")
@@ -536,13 +564,12 @@ def explore_links(userData, db, link_type):
             print("7. Copyright Policy")
             print("8. Brand Policy")
             print("9. Languages")
-            
+
         else:
             print("Invalid link type")
-            
 
         print("0. Go back to main hub")
-        
+
         choice = input("Enter your choice: ")
 
         if choice == '0':
@@ -721,7 +748,6 @@ def send_friend_request(caller_id, receiver_id, db):
     db.add(new_prospective_connection)
     db.commit()
     print("Friend request sent successfully.")
-    
 
 
 def handle_friend_requests(userData: UserInfo, db):
@@ -770,7 +796,8 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
             choice = input("Do you want to accept or reject: ")
 
             if choice == 1:
-                friend = Friends(user_id=user_id_to_accept_or_reject, friend_id=userData.id)
+                friend = Friends(
+                    user_id=user_id_to_accept_or_reject, friend_id=userData.id)
                 friendship = models.Friendship(**friend.dict())
                 db.add(friendship)
                 db.delete(prospective_connection)
@@ -790,7 +817,7 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
 def create_profile(userData, db):
     # Check if the user already has a profile
     existing_profile = db.query(models.UserProfile).filter_by(
-        userData.user_id==userData.id).first()
+        userData.user_id == userData.id).first()
     if existing_profile:
         print("You already have a profile. Would you like to update it?")
         update_profile_option = input(
@@ -858,7 +885,7 @@ def edit_profile_sections(db, userData, profile):
 def edit_experience(db, userData):
     # Fetch the user's existing profile
     existing_profile = db.query(models.UserProfile).filter_by(
-        userData.user_id==userData.id).first()
+        userData.user_id == userData.id).first()
     if not existing_profile:
         print("User profile not found.")
         return
@@ -913,7 +940,7 @@ def edit_experience(db, userData):
 def edit_education(db, userData):
     # Fetch the user's existing profile
     existing_profile = db.query(models.UserProfile).filter_by(
-    userData.user_id==userData.id).first()
+        userData.user_id == userData.id).first()
     if not existing_profile:
         print("User profile not found.")
         return

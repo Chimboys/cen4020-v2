@@ -47,6 +47,20 @@ class User(Base):  # creating a class User
     profile = relationship("UserProfile", uselist=False, back_populates="user")
     applications = relationship("JobApplication", back_populates="user")
     premium = Column(Boolean, default=False, nullable=False)
+    # Add a new relationship to access notifications
+    notifications = relationship("UserNotification", back_populates="user")
+
+
+class UserNotification(Base):
+    __tablename__ = "user_notifications"
+    id = Column(Integer, primary_key=True)
+    new_user_id = Column(Integer, ForeignKey('users.id'))
+    notified_user_id = Column(Integer)
+    delivered = Column(Boolean, default=False)
+    # Relationship to access user details
+    user = relationship("User", foreign_keys=[
+                        new_user_id], back_populates="notifications")
+
 
 class Message(Base):
     __tablename__ = "messages"
@@ -59,6 +73,7 @@ class Message(Base):
     # Define relationships
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
