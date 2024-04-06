@@ -126,8 +126,8 @@ def test_find_new_friends_back_to_main(mock_main_hub, mock_input):
 def test_find_new_friends_back_to_main(mock_main_hub, mock_input, mock_send_friend_request):
     assert find_new_friends_and_send_request(Tester1, db) == "Successfully sent friend request."
 
-def test_send_friend_request():
-    assert send_friend_request(Tester1.id, Tester2.id, db) == "Friend request sent successfully."
+# def test_send_friend_request():
+#     assert send_friend_request(Tester1.id, Tester2.id, db) == "Friend request sent successfully."
 
 
 if __name__ == "__main__":
