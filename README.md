@@ -37,17 +37,15 @@ pip install -r requirements.txt
 ```
 
 
-4. Run the server (for development only)
+4. Run the script
+
 ```bash
-uvicorn app.main:app --reload
+python3 main.py
 ```
 
-
-or
-```bash
-python3 server.py
+```Windows
+python main.py
 ```
-
 
 ## Run tests
 ```bash

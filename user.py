@@ -16,6 +16,7 @@ class UserInfo(BaseModel):
     school: str
     first_name: str
     last_name: str
+    premium: bool
 
 
 class Friends(BaseModel):

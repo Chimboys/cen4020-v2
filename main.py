@@ -133,7 +133,7 @@ def send_message_friend(userData, db):
         print("You cannot send a message to yourself")
         message_handler(userData, db)
     if userData.premium == False:
-        friends = db.query(models.Friendship).filter((models.Friendship.userData.user_id == userData.user_id)).all()
+        friends = db.query(models.Friendship).filter((models.Friendship.user_id == userData.user_id)).all()
         if receiver_id not in friends:
             print("You can only send messages to your friends without premium")
             message_handler(userData, db)
@@ -406,7 +406,7 @@ def signup(db):
         db.commit()
         db.refresh(new_user)
         user = UserInfo(id=new_user.id, username=new_user.username, school=new_user.school,
-                        first_name=new_user.first_name, last_name=new_user.last_name)
+                        first_name=new_user.first_name, last_name=new_user.last_name, premium=new_user.premium)
         default_guest_control = models.GuestControl(
         incollege_email_enabled=True,
         sms_enabled=True,
@@ -626,7 +626,7 @@ def user_actions(userData, db):
 # Fix it so it does not comeback to the main hub once user does not have friends
 def view_all_friends(userData: UserInfo, db):
 
-    friends = db.query(models.Friendship).filter(or_(models.Friendship.userData.user_id == userData.id,
+    friends = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
                                                      models.Friendship.friend_id == userData.id)).all()
 
     if not friends:
@@ -662,9 +662,9 @@ def view_all_friends(userData: UserInfo, db):
 
 def disconnect_from_friend(userData, friend_id: int, db: Session):
     friendship = db.query(models.Friendship).filter(
-        ((models.Friendship.userData.user_id == userData.user_id) & (models.Friendship.friend_id == friend_id)) |
-        ((models.Friendship.userData.user_id == friend_id) &
-         (models.Friendship.friend_id == userData.user_id))
+        ((models.Friendship.user_id == userData.id) & (models.Friendship.friend_id == friend_id)) |
+        ((models.Friendship.user_id == friend_id) &
+         (models.Friendship.friend_id == userData.id))
     ).first()
 
     if friendship:
@@ -743,12 +743,6 @@ def send_friend_request(caller_id, receiver_id, db):
     db.add(new_prospective_connection)
     db.commit()
     print("Friend request sent successfully.")
-<<<<<<< Updated upstream
-    
-=======
-    return "Friend request sent successfully."
->>>>>>> Stashed changes
-
 
 def handle_friend_requests(userData: UserInfo, db):
     while True:
