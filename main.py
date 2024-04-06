@@ -32,9 +32,11 @@ def find_user_by_first_last_name(first_name: str, last_name: str, db: Session):
     if db.query(models.User).filter(and_(models.User.first_name == first_name, models.User.last_name == last_name)).first():
         print("Person is a part of the InCollege system")
         signup(db)
+        return "Person is found"
     else:
         print("They are not a part of the InCollege system")
         print("Goodbye")
+        return "Person is not found"
 
 
 def handle_useful_links_choice(userData, db, choice):
@@ -142,7 +144,8 @@ def send_message_friend(userData, db):
         message_handler(userData, db)
     if userData.premium == False:
         friends = db.query(models.Friendship).filter(
-            (models.Friendship.userData.user_id == userData.user_id)).all()
+            (models.Friendship.user_id == userData.user_id)).all()
+
         if receiver_id not in friends:
             print("You can only send messages to your friends without premium")
             message_handler(userData, db)
@@ -381,7 +384,6 @@ def signup(db):
         else:
             print("Goodbye")
             return
-    
 
     hashed_password = input("Enter your password: ")
 
@@ -415,7 +417,7 @@ def signup(db):
         db.commit()
         db.refresh(new_user)
         user = UserInfo(id=new_user.id, username=new_user.username, school=new_user.school,
-                        first_name=new_user.first_name, last_name=new_user.last_name)
+                        first_name=new_user.first_name, last_name=new_user.last_name, premium=new_user.premium)
         default_guest_control = models.GuestControl(
             incollege_email_enabled=True,
             sms_enabled=True,
@@ -462,9 +464,10 @@ def login(db):
             "Password is invalid. Do you want to continue login? (yes/no): ")
         if continue_signup.lower() == 'yes':
             login(db)
+
         else:
             print("Login cancelled.")
-        return
+            return "Not Successful Login"
 
     queryUser = db.query(models.User).filter(
         models.User.username == username).first()
@@ -476,7 +479,7 @@ def login(db):
         return
     print("Login successfuly")
     user = UserInfo(id=queryUser.id, username=queryUser.username, school=queryUser.school,
-                    first_name=queryUser.first_name, last_name=queryUser.last_name)
+                    first_name=queryUser.first_name, last_name=queryUser.last_name, premium=queryUser.premium)
 
     notifications = db.query(models.UserNotification).join(models.User, models.User.id == models.UserNotification.new_user_id).filter(
         models.UserNotification.notified_user_id == queryUser.id,
@@ -496,6 +499,7 @@ def login(db):
     db.commit()
 
     main_hub(user, db)
+    return "Successful Login"
 
 
 def logout(userData, db):
@@ -649,7 +653,7 @@ def user_actions(userData, db):
 # Fix it so it does not comeback to the main hub once user does not have friends
 def view_all_friends(userData: UserInfo, db):
 
-    friends = db.query(models.Friendship).filter(or_(models.Friendship.userData.user_id == userData.id,
+    friends = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
                                                      models.Friendship.friend_id == userData.id)).all()
 
     if not friends:
@@ -685,9 +689,9 @@ def view_all_friends(userData: UserInfo, db):
 
 def disconnect_from_friend(userData, friend_id: int, db: Session):
     friendship = db.query(models.Friendship).filter(
-        ((models.Friendship.userData.user_id == userData.user_id) & (models.Friendship.friend_id == friend_id)) |
-        ((models.Friendship.userData.user_id == friend_id) &
-         (models.Friendship.friend_id == userData.user_id))
+        ((models.Friendship.user_id == userData.id) & (models.Friendship.friend_id == friend_id)) |
+        ((models.Friendship.user_id == friend_id) &
+         (models.Friendship.friend_id == userData.id))
     ).first()
 
     if friendship:
@@ -709,7 +713,7 @@ def find_new_friends_and_send_request(userData: UserInfo, db):
         print(f"No users found with the last name '{last_name_to_search}'.")
         print()
         main_hub(userData, db)
-        return
+        return "No users found"
 
     print("Matching Users:")
     for user in matching_users:
@@ -722,24 +726,38 @@ def find_new_friends_and_send_request(userData: UserInfo, db):
     if user_id_to_add == '0':
         print()
         main_hub(userData, db)
-        return
+        return "Return to Main Hub"
 
     try:
         user_id_to_add = int(user_id_to_add)
         if user_id_to_add == userData.id:
             print("You cannot send a friend request to yourself.")
             print()
+            main_hub(userData, db)
+            return "Cannot send friend request to self"
+        # FIXED this function because Friendship.UserData_id is not a thing
         elif db.query(models.Friendship).filter(or_(
-                and_(models.Friendship.userData.user_id == userData.id,
+                and_(models.Friendship.user_id == userData.id,
                      models.Friendship.friend_id == user_id_to_add),
-                and_(models.Friendship.userData.user_id == user_id_to_add, models.Friendship.friend_id == userData.id))).first():
+                and_(models.Friendship.user_id == user_id_to_add, models.Friendship.friend_id == userData.id))).first():
             print("Friendship already exists.")
             print()
         else:
             send_friend_request(userData.id, user_id_to_add, db)
+            return "Successfully sent friend request."
+    # SHOULD ADD ON MORE CASE IF FIX THIS BECAUSE USER CAN ENTER ANY NUMBER HERE THAT IS NOT IN DB
+
+    # Improved flow of the code because it will return in main after Invalid User ID
     except ValueError:
-        print("Invalid User ID. Please enter a valid numeric User ID.")
-        print()
+        print("Invalid User ID.")
+        print("press 1 to try again")
+        print("press anything else to go back to main hub")
+        choice = input("Enter your choice: ")
+        if choice == '1':
+            find_new_friends_and_send_request(userData, db)
+        else:
+            main_hub(userData, db)
+            return "Return to Main Hub 2"
 
     main_hub(userData, db)
 
@@ -986,6 +1004,7 @@ def learn_new_skills(userData: UserInfo, db):
         print("Goodbye")
         return
 
+
 def main():
     db = next(get_db())
     try:
@@ -993,6 +1012,6 @@ def main():
     finally:
         db.close()
 
+
 if __name__ == "__main__":
     main()
-
