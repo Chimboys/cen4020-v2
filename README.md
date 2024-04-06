@@ -31,15 +31,17 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-3. Install requirements
+3. Install requirements (to resolve :command not found: uvicorn and pytest added to requirement)
 ```bash
 pip install -r requirements.txt
 ```
+
 
 4. Run the server (for development only)
 ```bash
 uvicorn app.main:app --reload
 ```
+
 
 or
 ```bash
@@ -51,3 +53,4 @@ python3 server.py
 ```bash
 pytest -v -s
 ```
+
