@@ -145,6 +145,7 @@ def send_message_friend(userData, db):
     if userData.premium == False:
         friends = db.query(models.Friendship).filter(
             (models.Friendship.user_id == userData.user_id)).all()
+
         if receiver_id not in friends:
             print("You can only send messages to your friends without premium")
             message_handler(userData, db)
@@ -430,15 +431,15 @@ def signup(db):
         new_user.guest_control = default_guest_control
         db.commit()
 
-        # remainder = db.query(models.ProspectiveConnection).filter(models.ProspectiveConnection.first_name == first_name, models.ProspectiveConnection.last_name == last_name).first()
-        # if remainder:
-        #     caller = db.query(models.User).filter(models.User.id == remainder.caller_id).first()
-        #     print(f"Hi, {caller.first_name} {caller.last_name} was looking for you")
-        #     friend = Friends(userData.user_id=caller.id, friend_id=new_user.id)
-        #     friendship = models.Friendship(**friend.dict())
-        #     db.add(friendship)
-        #     db.delete(remainder)
-        #     db.commit()
+        existing_users = db.query(models.User).filter(
+            models.User.id != new_user.id).all()
+
+        for user in existing_users:
+            notification = models.UserNotification(
+                new_user_id=new_user.id, notified_user_id=user.id)
+            db.add(notification)
+
+        db.commit()
 
         skipVarforTest = main_hub(user, db)
         return "Test Completed"
@@ -479,6 +480,23 @@ def login(db):
     print("Login successfuly")
     user = UserInfo(id=queryUser.id, username=queryUser.username, school=queryUser.school,
                     first_name=queryUser.first_name, last_name=queryUser.last_name, premium=queryUser.premium)
+
+    notifications = db.query(models.UserNotification).join(models.User, models.User.id == models.UserNotification.new_user_id).filter(
+        models.UserNotification.notified_user_id == queryUser.id,
+        models.UserNotification.delivered == False
+    ).all()
+
+    if not notifications:
+        print("No new notifications.")
+
+    else:
+        for notification in notifications:
+            new_user = db.query(models.User).filter_by(
+                id=notification.new_user_id).first()
+            print(f"{new_user.first_name} {new_user.last_name} has joined InCollege.")
+            notification.delivered = True
+
+    db.commit()
 
     main_hub(user, db)
     return "Successful Login"
