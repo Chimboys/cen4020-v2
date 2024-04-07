@@ -50,17 +50,19 @@ def handle_useful_links_choice(userData, db, choice):
 
 def send_message_premium(userData, db):
     users = db.query(models.User).all()
+    users_list = []
     for user in users:
         print(
             f"ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}")
+        users_list.append(user.id)
     print()
     receiver_id = int(
         input("Enter the ID of the user you want to send a message to: "))
-    if receiver_id == userData.user_id:
+    if receiver_id == userData.id:
         print("You cannot send a message to yourself")
         print()
         message_handler(userData, db)
-    elif receiver_id not in users:
+    elif receiver_id not in users_list:
         print("User not found")
         print()
         message_handler(userData, db)
@@ -75,12 +77,15 @@ def send_message_premium(userData, db):
 
 
 def get_messages(userData, db):
+    print()
+    print(userData.id)
     messages = db.query(models.Message).filter(
         models.Message.receiver_id == userData.id).all()
     for message in messages:
-        print(f"ID: {message.id}, From: {message.sender_id}, To: {message.receiver_id}, Content: {message.content}, Sent at: {message.sent_at}")
+        sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
+        print(f"ID OF MESSAGE: {message.id}, From: {sender.id} - ID: {message.sender_id}, Content: {message.content}, Sent at: {message.sent_at}")
         print()
-        message_handler(userData, db)
+    message_handler(userData, db)
 
 
 def delete_message(userData, message_id, db):
@@ -123,8 +128,9 @@ def send_message_friend(userData, receiver_id, db):
     message_handler(userData, db)
 
 def upgrade_to_premium(userData, db):
-    userData.premium = True
+    db.query(models.User).filter(models.User.id == userData.id).update({models.User.premium: True}, synchronize_session=False)
     db.commit()
+    userData = db.query(models.User).filter(models.User.id == userData.id).first()
     print("You are now a premium user")
     message_handler(userData, db)
 
@@ -510,7 +516,7 @@ def login(db):
             notification.delivered = True
 
     db.commit()
-
+    print()
     main_hub(user, db)
     return "Successful Login"
 
@@ -595,6 +601,7 @@ def explore_links(userData, db, link_type):
         choice = input("Enter your choice: ")
 
         if choice == '0':
+            print() #FIX SHOULD NOT WE GO TO MAIN HUB INSTEAD 
             break
         elif link_type == "Useful Links" and choice in ('1', '2', '3', '4'):
             print()
