@@ -9,6 +9,9 @@ from database import get_db
 from sqlalchemy.sql import func
 from sqlalchemy import or_, and_
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 
 def check_password(password):
@@ -48,76 +51,120 @@ def handle_useful_links_choice(userData, db, choice):
         print("Invalid choice")
 
 
-def send_message_premium(userData, db):
-    users = db.query(models.User).all()
-    users_list = []
-    for user in users:
-        print(
-            f"ID: {user.id}, First Name: {user.first_name}, Last Name: {user.last_name}")
-        users_list.append(user.id)
-    print()
-    receiver_id = int(
-        input("Enter the ID of the user you want to send a message to: "))
-    if receiver_id == userData.id:
-        print("You cannot send a message to yourself")
-        print()
-        message_handler(userData, db)
-    elif receiver_id not in users_list:
-        print("User not found")
-        print()
-        message_handler(userData, db)
-    message = input("Enter your message: ")
-    new_message = models.Message(
-        sender_id=userData.id, receiver_id=receiver_id, content=message)
-    db.add(new_message)
-    db.commit()
-    print("Message sent successfully")
-    print()
-    message_handler(userData, db)
 
-
-def get_messages(userData, db):
-    print()
-    print(userData.id)
+def inbox(userData, db):
     messages = db.query(models.Message).filter(
         models.Message.receiver_id == userData.id).all()
-    for message in messages:
-        sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
-        print(f"ID OF MESSAGE: {message.id}, From: {sender.id} - ID: {message.sender_id}, Content: {message.content}, Sent at: {message.sent_at}")
+    if messages == None:
+        print("You Do Not Have Any Messages")
         print()
-    message_handler(userData, db)
+        message_handler(userData, db)
+    newMessages = []
+    readMessages = []
+    idMessages = []
+    for message in messages:
+        if message.read == True:
+            readMessages.append(message)
+        else:
+            newMessages.append(message)
+        idMessages.append(message.id)
+        
+    print()
+    print("New Messages")
+    if newMessages.count() == 0:
+        print("You do not have new messages")
+    else:
+        for message in newMessages:
+            sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
+            print(f"ID OF MESSAGE: {message.id}, From: {sender.username} with ID: {message.sender_id}, Sent at: {message.sent_at}")
+
+    print()
+    print("Read Messages")
+    if readMessages.count() == 0:
+        print("You do not have new messages")
+    else:
+        for message in readMessages:
+            sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
+            print(f"ID OF MESSAGE: {message.id}, From: {sender.username} with ID: {message.sender_id}, Sent at: {message.sent_at}")
+
+    print("Would you like to read any of the messages? ( 'yes' to continue)")
+    choice  = input()
+    if choice.lower() == "yes":
+        while True:
+            try:
+                messageChoice = int(input("Enter message ID or type 'quit' to go to main hub: "))
+                if messageChoice in idMessages:
+                    print()
+                    read_message(messageChoice, userData, db)
+                    pass
+                else:
+                    print("The message does not exist. Please re-enter ID.")
+            except ValueError:
+                if messageChoice.lower() == 'quit':
+                    main_hub(userData, db)
+                    break
+                else:
+                    print("Invalid input. Please enter a valid ID or type 'quit' to go to main hub.")
+    else:
+        print()
+        message_handler(userData, db)
+
+def read_message(message_id, userData, db):
+    message = db.query(models.Message).filter(
+        models.Message.id == message_id,
+        models.Message.receiver_id == userData.id).first()
+    
+    sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
+    print(f"From: {sender.username}, Sent at: {message.sent_at}")
+    print(f"{message.content}")
+    print() 
+
+    db.query(models.Message).filter(
+        models.Message.id == message_id,
+        models.Message.receiver_id == userData.id
+    ).update({models.Message.read: True}, synchronize_session=False)
+    db.commit()
+    
+    # set read to true message.update !!!
+    while True:
+        print("Would you like to reply, delete, or read other messages? ")
+        choice = input().lower()
+
+        if choice == 'read':
+            inbox(userData, db)
+        elif choice == 'reply':
+            print()
+            send_message(userData, db, sender.id)
+        elif choice == 'delete':
+            delete_message(userData, message_id, db) 
+        else:
+            print("Invalid input. Would you like to continue? (Type 'yes' to continue or 'no' to go back to main_hub)")
+            main_choice = input().lower()
+            if main_choice == "yes":
+                continue
+            elif main_choice == "no":
+                main_hub(userData, db)
+                break
+            else:
+                print("Invalid input. Please type 'yes' or 'no'.")
+
 
 
 def delete_message(userData, message_id, db):
     message = db.query(models.Message).filter(
         models.Message.id == message_id).first()
-    if message:
-        db.delete(message)
-        db.commit()
-        print("Message deleted successfully")
-    else:
-        print("Message not found")
+    db.delete(message)
+    db.commit()
+    print("Message deleted successfully")
+    print()
     message_handler(userData, db)
 
 
-def send_message_friend(userData, receiver_id, db):
+def send_message(userData, receiver_id, db):
     if receiver_id == userData.id:
         print("You cannot send a message to yourself")
         print()
         message_handler(userData, db)
-    if userData.premium == False:
-        friends = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
-                                                     models.Friendship.friend_id == userData.id)).all()
-        list_of_friends = []
-        for friend in friends:
-            list_of_friends.append(friend.friend_id)
-            list_of_friends.append(friend.user_id)
-
-        if receiver_id not in list_of_friends:
-            print("You can only send a message to a friend")
-            print()
-            message_handler(userData, db)  
-         
     message = input("Enter your message: ")
     new_message = models.Message(
         sender_id=userData.id, receiver_id=receiver_id, content=message)
@@ -128,46 +175,73 @@ def send_message_friend(userData, receiver_id, db):
     message_handler(userData, db)
 
 def upgrade_to_premium(userData, db):
-    db.query(models.User).filter(models.User.id == userData.id).update({models.User.premium: True}, synchronize_session=False)
-    db.commit()
-    userData = db.query(models.User).filter(models.User.id == userData.id).first()
-    print("You are now a premium user")
-    message_handler(userData, db)
+    print("You are about to upgrade to a plus user with a monthly fee of $10. Would you like to continue? (yes/no)")
+    choice = input()
+    if choice.lower() == 'no':
+        print("You have chosen not to upgrade to a premium user")
+        print()
+        message_handler(userData, db)
+    elif choice.lower() == 'yes':
+        one_month_from_now = datetime.now() + relativedelta(months=1)
+        db.query(models.User).filter(models.User.id == userData.id).update({models.User.premium: True,  models.User.premium_until: one_month_from_now}, synchronize_session=False)
+        db.commit()
+        userData = db.query(models.User).filter(models.User.id == userData.id).first()
+        print("You are now a premium user")
+        message_handler(userData, db)
 
 
 def message_handler(userData, db):
     print("Messages:")
-    print("1. View messages")
-    print("2. Send a message to a friend")
-    print("3. Delete a message")
-    print("4. Send message to anyone")
+    print("1. View inbox")
+    print("2. Send message")
+    if userData.premium == False:
+        print("3. Update to Plus") #improve update to premium !
     print("0. Exit")
     choice = input("Enter your choice: ")
-
     if choice == '1':
-        get_messages(userData, db)
+        inbox(userData, db)
+
+
     elif choice == '2':
-        flag = view_all_friends_for_messages(userData, db)
-        if flag == 0:
-            print("You need to have friends to send a message")
+        users = db.query(models.User).all()
+        print("Users:")
+        allUsers = []
+        for user in users:
+            print(f"ID: {user.id}, Nickname: {user.nickname}, First Name: {user.first_name}, Last Name: {user.last_name}")
+            allUsers.append(user.id)
+        print()
+        message_receiver = input("Choose to a person to send a message to via typing his/her ID: ")
+        if int(message_receiver) not in allUsers:
+            print("The user does not exist")
             print()
             message_handler(userData, db)
-        
-        receiver_id = int(input("Enter the ID of the user you want to send a message to: "))
-        send_message_friend(userData, receiver_id, db)
-    elif choice == '3':
-        message_id = int(
-            input("Enter the ID of the message you want to delete: "))
-        delete_message(userData, message_id, db)
-    elif choice == '4':
-        if userData.premium == True:
-            send_message_premium(userData, db)
-        else:
-            print("You need to be a premium user to send a message to anyone")
-            print("Would you like to upgrade to premium at 10$ a month?")
-            choice = input("Enter your choice: ")
-            if choice == 'yes':
-                upgrade_to_premium(userData, db)
+
+        if userData.premium == False:
+            friends = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
+                                                     models.Friendship.friend_id == userData.id)).all()
+            
+            if friends is None:
+                print("You need to have friends to send a message without being a plus user")
+                print()
+                message_handler(userData, db)
+            list_of_friends = []
+
+            for friend in friends:
+                list_of_friends.append(friend.friend_id)
+                list_of_friends.append(friend.user_id)
+            
+            if int(message_receiver) not in list_of_friends:
+                print("I'm sorry, you are not friends with that person")
+                print()
+                message_handler(userData, db)           
+            else:
+                send_message(userData, message_receiver, db)
+        elif userData.premium == True:
+            send_message(userData, message_receiver , db)
+
+    elif choice == '3' and userData.premium == False:
+        upgrade_to_premium(userData, db) #improve update to premium !
+   
     elif choice == '0':
         main_hub(userData, db)
 
@@ -425,8 +499,19 @@ def signup(db):
             return
         else:
             print("Not duplicate")
+        premium =  input("Would you like to purchase plus subscription for $10/mounth? With Plus Subscription, You have the ability to send messages to any user in the system, regardless of their friendship status,  communicate more freely and efficiently.  (yes/no): ")
+        if premium.lower() == 'yes':
+            premium = True
+            one_month_from_now = datetime.now() + relativedelta(months=1)
+            print("You have successfully upgraded to a premium user")
+            
+        else:
+            premium = False
+            one_month_from_now = None
+            print("You have chosen not to upgrade to a premium user")
+        print()
         user_create = UserCreate(username=username, hashed_password=hashed_password,
-                                 school=school, first_name=first_name, last_name=last_name, premium=False)
+                                 school=school, first_name=first_name, last_name=last_name, premium=premium, premium_until=one_month_from_now)
         new_user = models.User(**user_create.dict())
         db.add(new_user)
         db.commit()
@@ -464,6 +549,7 @@ def signup(db):
         continue_signup = input(
             "Password is invalid. Do you want to continue signup? (yes/no): ")
         if continue_signup.lower() == 'yes':
+            print()
             signup(db)
         else:
             print("Signup cancelled.")
@@ -505,15 +591,30 @@ def login(db):
         models.UserNotification.delivered == False
     ).all()
 
-    if not notifications:
+    newMessages = db.query(models.Message).filter(models.Message.receiver_id == queryUser.id, models.Message.read == False).all() #Messages notificaitons
+    if not notifications and not newMessages:
         print("No new notifications.")
 
-    else:
+    elif notifications and not newMessages:
         for notification in notifications:
             new_user = db.query(models.User).filter_by(
                 id=notification.new_user_id).first()
             print(f"{new_user.first_name} {new_user.last_name} has joined InCollege.")
             notification.delivered = True
+    elif not notifications and newMessages:
+         for message in newMessages:
+            sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
+            print(f"You have a new message from {sender.first_name} {sender.last_name}.")
+    elif notifications and newMessages:
+        for notification in notifications:
+            new_user = db.query(models.User).filter_by(
+                id=notification.new_user_id).first()
+            print(f"{new_user.first_name} {new_user.last_name} has joined InCollege.")
+            notification.delivered = True
+        print()
+        for message in newMessages:
+            sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
+            print(f"You have a new message from {sender.first_name} {sender.last_name}.")
 
     db.commit()
     print()
@@ -677,32 +778,7 @@ def user_actions(userData, db):
     return userData, db
 
 
-def view_all_friends_for_messages(userData: UserInfo, db):
-    friends = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
-                                                     models.Friendship.friend_id == userData.id)).all()
-    if not friends:
-        print("You have no friends")
-        print()
-        return 0
 
-    list_of_friends = []
-    for friend in friends:
-            list_of_friends.append(friend.friend_id)
-    for index in friends:
-
-        friend = db.query(models.User).filter(
-            models.User.id == (index.friend_id)).first()
-        if friend.id == userData.id:
-            friend = db.query(models.User).filter(
-                models.User.id == (index.user_id)).first()
-
-        else:
-            friend = db.query(models.User).filter(
-                models.User.id == (index.friend_id)).first()
-
-        print(
-            f'First name: {friend.first_name}, last name: {friend.last_name}, school: {friend.school}, id: {friend.id}')
-    return 1
 
 # Fix it so it does not comeback to the main hub once user does not have friends
 def view_all_friends(userData: UserInfo, db):
@@ -729,8 +805,7 @@ def view_all_friends(userData: UserInfo, db):
             friend = db.query(models.User).filter(
                 models.User.id == (index.friend_id)).first()
 
-        print(
-            f'First name: {friend.first_name}, last name: {friend.last_name}, school: {friend.school}, id: {friend.id}')
+        print(f'First name: {friend.first_name}, last name: {friend.last_name}, school: {friend.school}, id: {friend.id}')
     choice = input("Would you like to go back to the main hub? (yes/no): ")
     if choice.lower() == 'yes':
         print()
