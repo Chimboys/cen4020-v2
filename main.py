@@ -34,7 +34,6 @@ def check_password(password):
 def find_user_by_first_last_name(first_name: str, last_name: str, db: Session):
     if db.query(models.User).filter(and_(models.User.first_name == first_name, models.User.last_name == last_name)).first():
         print("Person is a part of the InCollege system")
-        signup(db)
         return "Person is found"
     else:
         print("They are not a part of the InCollege system")
@@ -71,24 +70,28 @@ def inbox(userData, db):
         
     print()
     print("New Messages")
-    if newMessages.count() == 0:
+    if len(newMessages) == 0:
         print("You do not have new messages")
     else:
         for message in newMessages:
             sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
-            print(f"ID OF MESSAGE: {message.id}, From: {sender.username} with ID: {message.sender_id}, Sent at: {message.sent_at}")
+            print(f"ID OF MESSAGE: {message.id}, From: {sender.first_name} {sender.last_name} with ID: {message.sender_id}, Sent at: {message.sent_at}")
 
     print()
     print("Read Messages")
-    if readMessages.count() == 0:
+    if len(readMessages) == 0:
         print("You do not have new messages")
     else:
         for message in readMessages:
             sender = db.query(models.User).filter(models.User.id == message.sender_id).first()
             print(f"ID OF MESSAGE: {message.id}, From: {sender.username} with ID: {message.sender_id}, Sent at: {message.sent_at}")
-
+    print()
+    if len(newMessages) == 0 and len(readMessages) == 0:
+        print()
+        message_handler(userData, db)
+    
     print("Would you like to read any of the messages? ( 'yes' to continue)")
-    choice  = input()
+    choice  = input("Enter your choice: ")
     if choice.lower() == "yes":
         while True:
             try:
@@ -134,7 +137,7 @@ def read_message(message_id, userData, db):
             inbox(userData, db)
         elif choice == 'reply':
             print()
-            send_message(userData, db, sender.id)
+            send_message(userData, sender.id, db)
         elif choice == 'delete':
             delete_message(userData, message_id, db) 
         else:
@@ -207,10 +210,15 @@ def message_handler(userData, db):
         print("Users:")
         allUsers = []
         for user in users:
-            print(f"ID: {user.id}, Nickname: {user.nickname}, First Name: {user.first_name}, Last Name: {user.last_name}")
+            print(f"ID: {user.id}, Username: {user.username}, First Name: {user.first_name}, Last Name: {user.last_name}")
             allUsers.append(user.id)
         print()
         message_receiver = input("Choose to a person to send a message to via typing his/her ID: ")
+        if int(message_receiver) == userData.id:    
+                print("You cannot send a message to yourself")
+                print()
+                message_handler(userData, db)
+        
         if int(message_receiver) not in allUsers:
             print("The user does not exist")
             print()
@@ -243,6 +251,7 @@ def message_handler(userData, db):
         upgrade_to_premium(userData, db) #improve update to premium !
    
     elif choice == '0':
+        print()
         main_hub(userData, db)
 
 
@@ -469,9 +478,13 @@ def signup(db):
             first_name = input("Enter the first name of the user: ")
             last_name = input("Enter the last name of the user: ")
             find_user_by_first_last_name(first_name, last_name, db)
-            return
+            print("would you like to sign up now? (yes/no)")
+            if input("Enter your choice: ").lower() != 'yes':
+               main()
+               print()
         else:
             print("Goodbye")
+            main()
             return
 
     hashed_password = input("Enter your password: ")
@@ -498,7 +511,8 @@ def signup(db):
                 login(db)
             return
         else:
-            print("Not duplicate")
+            print("Not duplicate") #I do not khow if it is needed
+            print()
         premium =  input("Would you like to purchase plus subscription for $10/mounth? With Plus Subscription, You have the ability to send messages to any user in the system, regardless of their friendship status,  communicate more freely and efficiently.  (yes/no): ")
         if premium.lower() == 'yes':
             premium = True
@@ -659,8 +673,10 @@ def main_hub(userData: UserInfo = None, db=None):
             print()
             userData, db = user_actions(userData, db)
         elif initial_choice == '4':
+            print()
             job_actions(userData, db)
         elif initial_choice == '6':
+            print()
             message_handler(userData, db)
         else:
             print("Invalid choice")
@@ -1143,7 +1159,7 @@ def learn_new_skills(userData: UserInfo, db):
 def main():
     db = next(get_db())
     try:
-        main_hub(db=db)
+        signup(db=db)
     finally:
         db.close()
 
