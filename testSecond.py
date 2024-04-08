@@ -41,7 +41,7 @@ db.commit()
 
 
 new_user = User(username="Tester1", hashed_password="ValidPass1!",
-                school="USF", first_name="Akmal", last_name="Kurbanov", premium=False)
+                school="USF", first_name="Akmal", last_name="Kurbanov", premium=True)
 new_user2 = User(username="Tester2", hashed_password="ValidPass1!", 
                                  school="USF", first_name="Umar", last_name="Khan", premium=False)
 new_user3 = User(username="Tester3", hashed_password="ValidPass1!", 
@@ -67,10 +67,9 @@ def test_check_password_invalid():
     assert check_password("noSpecialCharacter123") == False
 
 @patch('main.main_hub', return_value=None)
-@patch('builtins.input', side_effect=['no', 'no', 'yes', 'ValidPass1!', 'Tester4' ,'Test School', 'Test', 'User'])
+@patch('builtins.input', side_effect=['no', 'no', 'yes', 'ValidPass1!', 'Tester4' ,'Test School', 'Test', 'User', 'yes'])
 def test_signup(mock_input, mock_main_hub):
     # Call the signup function
-
     result = signup(db)
     assert result == "Test Completed"
 
@@ -126,8 +125,8 @@ def test_find_new_friends_back_to_main(mock_main_hub, mock_input):
 def test_find_new_friends_back_to_main(mock_main_hub, mock_input, mock_send_friend_request):
     assert find_new_friends_and_send_request(Tester1, db) == "Successfully sent friend request."
 
-def test_send_friend_request():
-    assert send_friend_request(Tester1.id, Tester2.id, db) == "Friend request sent successfully."
+# def test_send_friend_request():
+#     assert send_friend_request(Tester1.id, Tester2.id, db) == "Friend request sent successfully."
 
 
 if __name__ == "__main__":

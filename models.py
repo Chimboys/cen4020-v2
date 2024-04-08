@@ -47,6 +47,7 @@ class User(Base):  # creating a class User
     profile = relationship("UserProfile", uselist=False, back_populates="user")
     applications = relationship("JobApplication", back_populates="user")
     premium = Column(Boolean, default=False, nullable=False)
+    premium_until = Column(TIMESTAMP, default=None, nullable=True)
     # Add a new relationship to access notifications
     notifications = relationship("UserNotification", back_populates="user")
 
@@ -68,6 +69,7 @@ class Message(Base):
     sender_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
     receiver_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
     content = Column(String, nullable=False)
+    read = Column(Boolean, default=False)
     sent_at = Column(TIMESTAMP, server_default=text('now()'))
 
     # Define relationships
