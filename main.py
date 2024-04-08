@@ -294,7 +294,7 @@ def handle_general_links(userData):
 def handle_guest_controls(userData, db):
     print("Guest Controls:")
     val = db.query(models.GuestControl).filter(
-        models.GuestControl.userData.user_id == userData.id).first()
+        models.GuestControl.user_id == userData.id).first()
     print("Select the guest control you would like to see:")
     print("1. InCollege Email", val.incollege_email_enabled)
     print("2. SMS", val.sms_enabled)
