@@ -412,7 +412,7 @@ USF Computer Science Department
 def handle_language_preference(userData, db):
     print("Language Controls:")
     val = db.query(models.GuestControl).filter(
-        models.GuestControl.userData.user_id == userData.id).first()
+        models.GuestControl.user_id == userData.id).first()
     print("Select an option:")
     print("1. Language preference", val.language_preference)
     print("0. Exit")
