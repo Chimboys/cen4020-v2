@@ -441,6 +441,74 @@ def handle_language_preference(userData, db):
         else:
             print("Invalid choice")
 
+from models import UserProfile
+
+def handle_profile(userData, db):
+    while True:
+        user_profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == userData.id).first()
+
+        print("\nProfile Menu:")
+        print("1. View your profile")
+        print("2. Edit your profile")
+        print("3. View your friends' profiles")
+        print("0. Exit")
+
+        choice = input("Choose an option: ")
+
+        if choice == '1':
+            if user_profile:
+                # Display the user's profile
+                print(f"\n{userData.first_name} {userData.last_name}'s Profile:")
+                print(f"Title: {user_profile.title}")
+                print(f"Major: {user_profile.major}")
+                print(f"University: {user_profile.university_name}")
+                print(f"About: {user_profile.about_student}")
+            else:
+                print("You do not have a profile yet.")
+
+        elif choice == '2':
+            if user_profile:
+                # Edit the user's profile
+                print("\nEnter new profile details (press enter to skip any field):")
+                user_profile.title = input("New title: ") or user_profile.title
+                user_profile.major = input("New major: ") or user_profile.major
+                user_profile.university_name = input("New university: ") or user_profile.university_name
+                user_profile.about_student = input("New about: ") or user_profile.about_student
+                
+                db.commit()
+                print("Profile updated successfully.")
+            else:
+                print("You do not have a profile to edit.")
+
+        elif choice == '3':
+            # View friends' profiles
+            friendships = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
+                                                                 models.Friendship.friend_id == userData.id)).all()
+            if friendships:
+                print("\nYour Friends:")
+                for friendship in friendships:
+                    friend_id = friendship.friend_id if friendship.user_id == userData.id else friendship.user_id
+                    friend = db.query(models.User).filter(models.User.id == friend_id).first()
+                    friend_profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == friend_id).first()
+
+                    if friend_profile:
+                        print(f"\n{friend.first_name} {friend.last_name}'s Profile:")
+                        print(f"Title: {friend_profile.title}")
+                        print(f"Major: {friend_profile.major}")
+                        print(f"University: {friend_profile.university_name}")
+                        print(f"About: {friend_profile.about_student}")
+                    else:
+                        print(f"{friend.first_name} {friend.last_name} does not have a profile.")
+            else:
+                print("You do not have any friends to view profiles.")
+
+        elif choice == '0':
+            print("Exiting profile menu.")
+            break
+
+        else:
+            print("Invalid option. Please try again.")
+
 
 def find_user_by_first_last_name_login(first_name: str, last_name: str, userData: UserInfo, db: Session):
     if db.query(models.User).filter(and_(models.User.first_name == first_name, models.User.last_name == last_name)).first():
@@ -655,6 +723,7 @@ def main_hub(userData: UserInfo = None, db=None):
         if userData:
             print("4. Job search and Internships")
             print("6. Messages")
+            print("7. Profile")
         print("5. Exit")
         initial_choice = input("Enter your choice: ").lower()
 
@@ -678,10 +747,12 @@ def main_hub(userData: UserInfo = None, db=None):
         elif initial_choice == '6':
             print()
             message_handler(userData, db)
+        elif initial_choice == '7':
+            print()
+            handle_profile(userData, db)
         else:
             print("Invalid choice")
             print()
-
 
 def explore_links(userData, db, link_type):
     while True:
