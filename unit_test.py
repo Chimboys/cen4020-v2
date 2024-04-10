@@ -53,7 +53,7 @@ new_user = User(username="Tester1", hashed_password="ValidPass1!",
 new_user2 = User(username="Tester2", hashed_password="ValidPass1!", 
                                     school="USF", first_name="Umar", last_name="Khan", premium=False)
 new_user3 = User(username="Tester3", hashed_password="ValidPass1!", 
-                                    school="USF", first_name="Mukund", last_name="Mukund Sharma", premium=False)
+                                    school="USF", first_name="Mukund", last_name="Sharma", premium=False)
         
 db.add(new_user)
 db.add(new_user2)
@@ -144,6 +144,12 @@ def test_find_new_friends_back_to_main_v3(mock_main_hub, mock_input):
 @patch('builtins.input', side_effect=['Khan', Tester2.id]) 
 def test_send_friend_request(mock_input, mock_main_hub):
     assert find_new_friends_and_send_request(Tester1, db) == "Friend request already sent"
+
+@patch('main.main_hub', return_value=None)
+@patch('builtins.input', side_effect=["Kurbanov", Tester1.id])
+def test_pending_friend_request_exists(mock_main_hub, mock_input):
+    assert find_new_friends_and_send_request(Tester2, db) == "Pending friend request exists"
+
 
 
 if __name__ == "__main__":
