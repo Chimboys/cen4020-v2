@@ -5,7 +5,7 @@ from unittest.mock import patch
 from user import UserCreate, UserInfo, Friends
 # Importing the job_actions function from jobs_func.py
 from jobs_func import job_actions
-from models import User, GuestControl, UserNotification, ProspectiveConnection
+from models import User, GuestControl, UserNotification, ProspectiveConnection, UserProfile, Experience, Education, Post, JobPost, Message, Friendship, JobApplication
 from sqlalchemy.orm import Session
 from database import get_db
 from sqlalchemy.sql import func
@@ -14,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 import sqlalchemy
 from database import get_db
+from sqlalchemy import delete
 
 from main import (
     check_password,
@@ -28,9 +29,17 @@ from main import (
 
 db = next(get_db())
 
-
-
-
+db.query(Friendship).delete()
+db.query(JobApplication).delete()
+db.query(JobPost).delete()
+db.query(Post).delete()
+db.query(Education).delete()
+db.query(Experience).delete()
+db.query(Message).delete()
+db.query(ProspectiveConnection).delete()
+db.query(UserNotification).delete()
+db.query(GuestControl).delete()
+db.query(UserProfile).delete()
 db.query(UserNotification).delete()
 db.query(GuestControl).delete()
 db.query(ProspectiveConnection).delete()
@@ -39,14 +48,13 @@ db.commit()
 
 
 
-
 new_user = User(username="Tester1", hashed_password="ValidPass1!",
-                school="USF", first_name="Akmal", last_name="Kurbanov", premium=True)
+                    school="USF", first_name="Akmal", last_name="Kurbanov", premium=True)
 new_user2 = User(username="Tester2", hashed_password="ValidPass1!", 
-                                 school="USF", first_name="Umar", last_name="Khan", premium=False)
+                                    school="USF", first_name="Umar", last_name="Khan", premium=False)
 new_user3 = User(username="Tester3", hashed_password="ValidPass1!", 
-                                 school="USF", first_name="Mukund", last_name="Mukund Sharma", premium=False)
-    
+                                    school="USF", first_name="Mukund", last_name="Mukund Sharma", premium=False)
+        
 db.add(new_user)
 db.add(new_user2)
 db.add(new_user3)
