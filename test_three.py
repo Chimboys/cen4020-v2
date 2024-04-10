@@ -21,7 +21,7 @@ def test_db_session():
 @patch('main.get_notification')
 def test_job_application_reminder(mock_get_notification, test_db_session):
     user_id = 1  # Assuming user_id 1 exists for testing
-    mock_get_notification.return_value = "Remember – you're going to want to have a job when you graduate."
+    mock_get_notification.return_value = "Remember you're going to want to have a job when you graduate."
     notification = get_notification(user_id, test_db_session)
     assert "Remember – you're going to want to have a job when you graduate." in notification
 

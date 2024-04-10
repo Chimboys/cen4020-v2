@@ -11,6 +11,7 @@ from sqlalchemy import or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from profiles import Profile
 
 
 
@@ -441,73 +442,105 @@ def handle_language_preference(userData, db):
         else:
             print("Invalid choice")
 
-from models import UserProfile
-
 def handle_profile(userData, db):
     while True:
         user_profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == userData.id).first()
 
-        print("\nProfile Menu:")
-        print("1. View your profile")
-        print("2. Edit your profile")
-        print("3. View your friends' profiles")
-        print("0. Exit")
+        if user_profile:
+            print("\nProfile Menu:")
+            print("1. View your profile")
+            print("2. Edit your profile")
+            print("3. View your friends' profiles")
+            print("0. Exit")
 
-        choice = input("Choose an option: ")
+            choice = input("Choose an option: ")
 
-        if choice == '1':
-            if user_profile:
+            if choice == '1':
                 # Display the user's profile
                 print(f"\n{userData.first_name} {userData.last_name}'s Profile:")
                 print(f"Title: {user_profile.title}")
                 print(f"Major: {user_profile.major}")
                 print(f"University: {user_profile.university_name}")
                 print(f"About: {user_profile.about_student}")
-            else:
-                print("You do not have a profile yet.")
 
-        elif choice == '2':
-            if user_profile:
+            elif choice == '2':
                 # Edit the user's profile
                 print("\nEnter new profile details (press enter to skip any field):")
-                user_profile.title = input("New title: ") or user_profile.title
-                user_profile.major = input("New major: ") or user_profile.major
-                user_profile.university_name = input("New university: ") or user_profile.university_name
-                user_profile.about_student = input("New about: ") or user_profile.about_student
+                title = input("New title: ") or user_profile.title
+                major = input("New major: ") or user_profile.major
+                university = input("New university: ") or user_profile.university_name
+                about = input("New about: ") or user_profile.about_student
                 
+                # Update the profile
+                user_profile.title = title
+                user_profile.major = major
+                user_profile.university_name = university
+                user_profile.about_student = about
                 db.commit()
                 print("Profile updated successfully.")
-            else:
-                print("You do not have a profile to edit.")
 
-        elif choice == '3':
-            # View friends' profiles
-            friendships = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
+            elif choice == '3':
+                  # View friends' profiles
+                friendships = db.query(models.Friendship).filter(or_(models.Friendship.user_id == userData.id,
                                                                  models.Friendship.friend_id == userData.id)).all()
-            if friendships:
-                print("\nYour Friends:")
-                for friendship in friendships:
-                    friend_id = friendship.friend_id if friendship.user_id == userData.id else friendship.user_id
-                    friend = db.query(models.User).filter(models.User.id == friend_id).first()
-                    friend_profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == friend_id).first()
+                if friendships:
+                    print("\nYour Friends:")
+                    for friendship in friendships:
+                        friend_id = friendship.friend_id if friendship.user_id == userData.id else friendship.user_id
+                        friend = db.query(models.User).filter(models.User.id == friend_id).first()
+                        friend_profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == friend_id).first()
 
-                    if friend_profile:
-                        print(f"\n{friend.first_name} {friend.last_name}'s Profile:")
-                        print(f"Title: {friend_profile.title}")
-                        print(f"Major: {friend_profile.major}")
-                        print(f"University: {friend_profile.university_name}")
-                        print(f"About: {friend_profile.about_student}")
-                    else:
-                        print(f"{friend.first_name} {friend.last_name} does not have a profile.")
+                        if friend_profile:
+                            print(f"\n{friend.first_name} {friend.last_name}'s Profile:")
+                            print(f"Title: {friend_profile.title}")
+                            print(f"Major: {friend_profile.major}")
+                            print(f"University: {friend_profile.university_name}")
+                            print(f"About: {friend_profile.about_student}")
+                        else:
+                            print(f"{friend.first_name} {friend.last_name} does not have a profile.")
+                else:
+                    print("You do not have any friends to view profiles.")
+                
+
+            elif choice == '0':
+                    print("Exiting profile menu.")
+                    break
+
             else:
-                print("You do not have any friends to view profiles.")
-
-        elif choice == '0':
-            print("Exiting profile menu.")
-            break
+                print("Invalid option. Please try again.")
 
         else:
-            print("Invalid option. Please try again.")
+            print("\nYou do not have a profile yet.")
+            print("1. Create profile")
+            print("0. Exit")
+
+            choice = input("Choose an option: ")
+
+            if choice == '1':
+                # Create a new profile
+                print("\nEnter your profile details:")
+                title = input("Title: ")
+                major = input("Major: ")
+                university = input("University: ")
+                about = input("About: ")
+
+                new_profile = models.UserProfile(
+                    user_id=userData.id,
+                    title=title,
+                    major=Profile.format_text(major),
+                    university_name=Profile.format_text(university),
+                    about_student=about
+                )
+                db.add(new_profile)
+                db.commit()
+                print("Profile created successfully.")
+
+            elif choice == '0':
+                print("Exiting profile menu.")
+                break
+
+            else:
+                print("Invalid option. Please try again.")
 
 
 def find_user_by_first_last_name_login(first_name: str, last_name: str, userData: UserInfo, db: Session):
@@ -845,7 +878,7 @@ def user_actions(userData, db):
                logout()
             elif user_choice == '7':
                 print()
-                create_profile(db, userData.id)
+                create_profile(userData,db)
             elif user_choice == '8':
                 print()
                 main_hub(userData, db)
@@ -1072,7 +1105,7 @@ def create_profile(userData, db):
     profile = models.UserProfile(
         title="N/A",
         major="N/A",
-        university_name="N/A",
+        university_name=UserInfo.school,
         about_student="N/A",
         experience=[],
         education=[],
@@ -1124,7 +1157,7 @@ def edit_profile_sections(db, userData, profile):
 def edit_experience(db, userData):
     # Fetch the user's existing profile
     existing_profile = db.query(models.UserProfile).filter_by(
-        userData.user_id == userData.id).first()
+        UserProfile.user_id == userData.id).first()
     if not existing_profile:
         print("User profile not found.")
         return
