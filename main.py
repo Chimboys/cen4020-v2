@@ -294,8 +294,12 @@ def handle_general_links(userData):
 
 def handle_guest_controls(userData, db):
     print("Guest Controls:")
-    val = db.query(models.GuestControl).filter(
-        models.GuestControl.user_id == userData.id).first()
+    val = db.query(models.GuestControl).filter(models.GuestControl.user_id == userData.id).first()
+    if val is None:
+    # Create a new GuestControl record with default values
+        val = models.GuestControl(user_id=userData.id, incollege_email_enabled=True, sms_enabled=True, targeted_advertising_enabled=True)
+        db.add(val)
+        db.commit()
     print("Select the guest control you would like to see:")
     print("1. InCollege Email", val.incollege_email_enabled)
     print("2. SMS", val.sms_enabled)
@@ -342,7 +346,7 @@ def handle_important_links_choice(userData, db, choice):
             print("Log in to access Guest Controls")
             print()
     elif choice == 1:
-        print("Copyright (c) [Year] [Full Name]", "All rights reserved.",
+        print("Copyright (c) 2024 Team Beige", "All rights reserved.",
               "This software, InCollege, is the property of Team Beige. Any redistribution, modification, or reproduction is not permitted without the express consent of team Beige.", end="\n")
 
     elif choice == 2:
@@ -414,6 +418,11 @@ def handle_language_preference(userData, db):
     print("Language Controls:")
     val = db.query(models.GuestControl).filter(
         models.GuestControl.user_id == userData.id).first()
+    if val is None:
+    # Create a new GuestControl record with default values
+        val = models.GuestControl(user_id=userData.id, incollege_email_enabled=True, sms_enabled=True, targeted_advertising_enabled=True)
+        db.add(val)
+        db.commit()
     print("Select an option:")
     print("1. Language preference", val.language_preference)
     print("0. Exit")
@@ -422,7 +431,7 @@ def handle_language_preference(userData, db):
     while True:
         print("Would you like to change your preference?")
         choice = input("Enter your choice: ")
-        if choice == 'Yes':
+        if choice.lower() == 'yes':
             print("Choose which language you would like to use")
             print("1. English")
             print("2. Spanish")
@@ -436,11 +445,13 @@ def handle_language_preference(userData, db):
             else:
                 print("Invalid choice")
                 print()
-        elif choice == 'No':
+                explore_links(userData, db, "Important Links")
+        elif choice.lower() == 'no':
             main_hub(userData, db)
 
         else:
             print("Invalid choice")
+            handle_important_links_choice(userData, db, 9)
 
 def handle_profile(userData, db):
     while True:
@@ -610,7 +621,9 @@ def signup(db):
                 "Would you like to login instead? (yes/no)")  # change
             if continue_signup.lower() == 'yes':
                 login(db)
-            return
+            else:
+                signup(db)
+                return "Username already in use"
         else:
             print("Not duplicate") #I do not khow if it is needed
             print()
@@ -991,12 +1004,24 @@ def find_new_friends_and_send_request(userData: UserInfo, db):
                 and_(models.Friendship.user_id == user_id_to_add, models.Friendship.friend_id == userData.id))).first():
             print("Friendship already exists.")
             print()
+        elif db.query(models.ProspectiveConnection).filter(
+            models.ProspectiveConnection.caller_id == userData.id,
+            models.ProspectiveConnection.receiver_id == user_id_to_add).first():
+            print("Friend request already sent.")
+            print()
+            main_hub(userData, db)
+            return "Friend request already sent" 
+        elif db.query(models.ProspectiveConnection).filter(
+        models.ProspectiveConnection.receiver_id == userData.id,
+        models.ProspectiveConnection.caller_id == user_id_to_add).first():
+            print("You have a pending friend request from this user. Please check your inbox.")
+            print()
+            main_hub(userData, db)
+            return "Pending friend request exists"
         else:
             print()
             send_friend_request(userData.id, user_id_to_add, db)
-        
             return "Successfully sent friend request."
-    # SHOULD ADD ON MORE CASE IF FIX THIS BECAUSE USER CAN ENTER ANY NUMBER HERE THAT IS NOT IN DB
 
     # Improved flow of the code because it will return in main after Invalid User ID
     except ValueError:
@@ -1089,7 +1114,7 @@ def accept_or_reject_friend_requests(userData: UserInfo, db):
 def create_profile(userData, db):
     # Check if the user already has a profile
     existing_profile = db.query(models.UserProfile).filter_by(
-        userData.user_id == userData.id).first()
+        models.UserProfile.user_id == userData.id).first()
     if existing_profile:
         print("You already have a profile. Would you like to update it?")
         update_profile_option = input(
