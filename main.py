@@ -610,7 +610,9 @@ def signup(db):
                 "Would you like to login instead? (yes/no)")  # change
             if continue_signup.lower() == 'yes':
                 login(db)
-            return
+            else:
+                signup(db)
+                return "Username already in use"
         else:
             print("Not duplicate") #I do not khow if it is needed
             print()
@@ -991,12 +993,17 @@ def find_new_friends_and_send_request(userData: UserInfo, db):
                 and_(models.Friendship.user_id == user_id_to_add, models.Friendship.friend_id == userData.id))).first():
             print("Friendship already exists.")
             print()
+        elif db.query(models.ProspectiveConnection).filter(
+            models.ProspectiveConnection.caller_id == userData.id,
+            models.ProspectiveConnection.receiver_id == user_id_to_add).first():
+            print("Friend request already sent.")
+            print()
+            main_hub(userData, db)
+            return "Friend request already sent" 
         else:
             print()
             send_friend_request(userData.id, user_id_to_add, db)
-        
             return "Successfully sent friend request."
-    # SHOULD ADD ON MORE CASE IF FIX THIS BECAUSE USER CAN ENTER ANY NUMBER HERE THAT IS NOT IN DB
 
     # Improved flow of the code because it will return in main after Invalid User ID
     except ValueError:
